@@ -116,16 +116,46 @@
 
   <script>
 
-    function registrarse(event){
+function registrarse(event){
 
-      event.preventDefault();
+  event.preventDefault();
 
-      alert("✅ Registro exitoso");
+  // obtener datos
+  const nombre = document.querySelector('input[name="nombre"]').value;
+  const email = document.querySelector('input[name="email"]').value;
+  const password = document.querySelector('input[name="password"]').value;
 
-      window.location.href = "login.html";
-    }
+  // obtener usuarios guardados
+  let usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
 
-  </script>
+  // verificar si el email ya existe
+  const existe = usuarios.find(user => user.email === email);
+
+  if(existe){
+    alert("Este correo ya está registrado");
+    return;
+  }
+
+  // crear usuario
+  const nuevoUsuario = {
+    nombre,
+    email,
+    password
+  };
+
+  // guardar usuario
+  usuarios.push(nuevoUsuario);
+
+  // guardar en localStorage
+  localStorage.setItem("usuarios", JSON.stringify(usuarios));
+
+  alert("Registro exitoso");
+
+  // ir al login
+  window.location.href = "login.html";
+}
+
+</script>
 
 </body>
 </html>
