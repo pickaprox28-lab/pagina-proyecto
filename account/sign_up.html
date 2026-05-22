@@ -57,6 +57,24 @@
       box-shadow: 0 0 8px rgba(79,172,254,0.5);
     }
 
+    .password-container{
+      position: relative;
+    }
+
+    .show-password{
+      position: absolute;
+      right: 10px;
+      top: 17px;
+      background: none;
+      border: none;
+      color: #008cff;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: bold;
+      width: auto;
+      padding: 0;
+    }
+
     button{
       width: 100%;
       padding: 12px;
@@ -102,7 +120,26 @@
       <input type="email" name="email" placeholder="Ingresa tu email" required>
 
       <label>Contraseña</label>
-      <input type="password" name="password" placeholder="Ingresa tu contraseña" required>
+
+      <div class="password-container">
+
+        <input 
+          type="password" 
+          name="password" 
+          id="password"
+          placeholder="Ingresa tu contraseña" 
+          required
+        >
+
+        <button 
+          type="button" 
+          class="show-password"
+          onclick="mostrarPassword()"
+        >
+          Ver
+        </button>
+
+      </div>
 
       <button type="submit">Registrarse</button>
 
@@ -116,19 +153,31 @@
 
   <script>
 
+function mostrarPassword(){
+
+  const password = document.getElementById("password");
+
+  if(password.type === "password"){
+
+    password.type = "text";
+
+  }else{
+
+    password.type = "password";
+
+  }
+}
+
 function registrarse(event){
 
   event.preventDefault();
 
-  // obtener datos
   const nombre = document.querySelector('input[name="nombre"]').value;
   const email = document.querySelector('input[name="email"]').value;
   const password = document.querySelector('input[name="password"]').value;
 
-  // obtener usuarios guardados
   let usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
 
-  // verificar si el email ya existe
   const existe = usuarios.find(user => user.email === email);
 
   if(existe){
@@ -136,22 +185,18 @@ function registrarse(event){
     return;
   }
 
-  // crear usuario
   const nuevoUsuario = {
     nombre,
     email,
     password
   };
 
-  // guardar usuario
   usuarios.push(nuevoUsuario);
 
-  // guardar en localStorage
   localStorage.setItem("usuarios", JSON.stringify(usuarios));
 
   alert("Registro exitoso");
 
-  // ir al login
   window.location.href = "login.html";
 }
 
