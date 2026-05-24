@@ -2,11 +2,11 @@
 
 ## Uso
 
--
+
 
 ## Tecnologías
 
-- Python
+- HTML
 
 ## Autores
 
