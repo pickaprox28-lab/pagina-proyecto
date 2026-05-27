@@ -23,7 +23,7 @@ body{
 }
 
 .container{
-  background: white;
+  background: rgb(255, 255, 255);
   width: 350px;
   padding: 40px;
   border-radius: 15px;
@@ -99,11 +99,60 @@ input:focus{
   font-weight: bold;
 }
 
+.container{
+  position: relative;
+  background: rgb(255, 255, 255);
+  width: 350px;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.close-btn{
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  width: 35px;
+  height: 35px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: #dddddd;
+  border-radius: 50%;
+  border: none;
+
+  text-decoration: none;
+  color: #666;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+
+  transition: 0.3s;
+}
+
+.close-btn:hover{
+  background: #ff4d4d;
+  color: rgb(255, 255, 255);
+}
+
+.g-recaptcha{
+  display: flex;
+  justify-content: center;
+  margin: 15px 0;
+}
+
 </style>
+
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
 </head>
 <body>
 
 <div class="container">
+
+  <a href="index.html" class="close-btn">x</a>
 
   <h2>Iniciar Sesión</h2>
 
@@ -123,6 +172,14 @@ input:focus{
 
     </div>
 
+    <div class="recaptcha-container">
+      <div class="g-recaptcha"
+       data-sitekey="6Ldxev8sAAAAAKLjNqd3kQQS776nvI_kLnOJAXVZ">
+      </div>
+    </div>
+
+    <br>
+
     <button type="submit" class="login-btn">
       Entrar
     </button>
@@ -131,7 +188,7 @@ input:focus{
 
   <div class="register-link">
     ¿No tienes cuenta?
-    <a href="registro.html">Regístrate</a>
+    <a href="sign_up.html">Regístrate</a>
   </div>
 
 </div>
@@ -153,9 +210,17 @@ function mostrarPassword(){
   }
 }
 
+//captcha///////////////////////////////////////////////////////////////////////
 function login(event){
 
   event.preventDefault();
+
+  const captcha = grecaptcha.getResponse();
+
+  if(captcha.length === 0){
+    alert("Debes completar el CAPTCHA");
+    return;
+  }
 
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -176,6 +241,7 @@ function login(event){
 
     alert("Correo o contraseña incorrectos");
 
+    grecaptcha.reset();
   }
 }
 
