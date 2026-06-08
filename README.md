@@ -7,6 +7,8 @@
 ## Tecnologías
 
 - HTML
+- CSS
+- JAVASCRIPT
 
 ## Autores
 
