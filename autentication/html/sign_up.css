@@ -1,0 +1,139 @@
+*{
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body{
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #4facfe, #00f2fe);
+    }
+
+    .container{
+      background: white;
+      padding: 40px;
+      border-radius: 15px;
+      width: 350px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    h2{
+      text-align: center;
+      margin-bottom: 25px;
+      color: #333;
+    }
+
+    label{
+      font-weight: bold;
+      color: #555;
+    }
+
+    input{
+      width: 100%;
+      padding: 12px;
+      margin-top: 5px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      outline: none;
+      transition: 0.3s;
+    }
+
+    input:focus{
+      border-color: #4facfe;
+      box-shadow: 0 0 8px rgba(79,172,254,0.5);
+    }
+
+    .password-container{
+      position: relative;
+    }
+
+    .show-password{
+      position: absolute;
+      right: 10px;
+      top: 17px;
+      background: none;
+      border: none;
+      color: #008cff;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: bold;
+      width: auto;
+      padding: 0;
+    }
+
+    button{
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: #4facfe;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover{
+      background: #008cff;
+    }
+
+    .login-link{
+      text-align: center;
+      margin-top: 15px;
+      color: #666;
+    }
+
+    .login-link a{
+      color: #008cff;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .container{
+      position: relative;
+      background: rgb(255, 255, 255);
+      width: 350px;
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .close-btn{
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      width: 35px;
+      height: 35px;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      background: #dddddd;
+      border-radius: 50%;
+      border: none;
+
+      text-decoration: none;
+      color: #666;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+
+      transition: 0.3s;
+    }
+
+    .close-btn:hover{
+      background: #ff4d4d;
+      color: rgb(255, 255, 255);
+    }
+
+    .recaptcha-container{
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
