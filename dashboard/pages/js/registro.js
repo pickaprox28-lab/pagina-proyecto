@@ -1,0 +1,152 @@
+// Mapa y lógica de registro (sin captcha)
+let mapa;
+let marcador;
+
+document.addEventListener('DOMContentLoaded', function() {
+    inicializarMapa();
+    
+    // Mostrar/ocultar sección de frecuencia
+    const radiosEstufa = document.querySelectorAll('input[name="usa_estufa"]');
+    radiosEstufa.forEach(radio => {
+        radio.addEventListener('change', function() {
+            const frecuenciaSection = document.getElementById('frecuenciaSection');
+            if (this.value === 'si') {
+                frecuenciaSection.style.display = 'block';
+                document.querySelectorAll('input[name="frecuencia"]').forEach(r => r.required = true);
+            } else {
+                frecuenciaSection.style.display = 'none';
+                document.querySelectorAll('input[name="frecuencia"]').forEach(r => r.required = false);
+            }
+        });
+    });
+    
+    // Submit del formulario
+    document.getElementById('registroForm').addEventListener('submit', enviarRegistro);
+});
+
+function inicializarMapa() {
+    // Centro de Santiago como ejemplo
+    mapa = L.map('mapa').setView([-33.45694, -70.64827], 13);
+    
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+    }).addTo(mapa);
+    
+    mapa.on('click', function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        
+        if (marcador) mapa.removeLayer(marcador);
+        marcador = L.marker([lat, lng]).addTo(mapa);
+        
+        document.getElementById('latitud').value = lat;
+        document.getElementById('longitud').value = lng;
+        
+        // Reverse geocoding simple
+        obtenerDireccionDesdeCoordenadas(lat, lng);
+    });
+}
+
+async function obtenerDireccionDesdeCoordenadas(lat, lng) {
+    try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+        const data = await response.json();
+        const direccion = data.display_name || `${lat}, ${lng}`;
+        document.getElementById('direccion').value = direccion;
+    } catch (error) {
+        document.getElementById('direccion').value = `${lat}, ${lng}`;
+    }
+}
+
+async function enviarRegistro(event) {
+    event.preventDefault();
+    
+    const usuarioId = localStorage.getItem('usuarioActual');
+    
+    // Obtener el valor de usa_estufa de manera más robusta
+    const usaEstufaRadio = document.querySelector('input[name="usa_estufa"]:checked');
+    const usa_estufa = usaEstufaRadio ? usaEstufaRadio.value : null;
+    
+    // Obtener el valor de frecuencia
+    const frecuenciaRadio = document.querySelector('input[name="frecuencia"]:checked');
+    const frecuencia = frecuenciaRadio ? frecuenciaRadio.value : 'no';
+    
+    const comentario = document.getElementById('comentario').value;
+    const direccion = document.getElementById('direccion').value;
+    const latitud = document.getElementById('latitud').value;
+    const longitud = document.getElementById('longitud').value;
+    
+    console.log('Datos a enviar:', {
+        usuario_id: usuarioId,
+        direccion,
+        latitud,
+        longitud,
+        usa_estufa,
+        frecuencia,
+        comentario
+    });
+    
+    // Validar que se seleccionó respuesta
+    if (!usa_estufa) {
+        mostrarError('Por favor selecciona si usas o no estufa a leña');
+        return;
+    }
+    
+    // Validar dirección
+    if (!direccion || !latitud || !longitud) {
+        mostrarError('Por favor selecciona tu dirección en el mapa');
+        return;
+    }
+    
+    // Si usa estufa, validar que seleccionó frecuencia
+    if (usa_estufa === 'si' && !frecuenciaRadio) {
+        mostrarError('Por favor selecciona la frecuencia de uso');
+        return;
+    }
+    
+    try {
+        const response = await fetch('http://localhost:3000/api/estufa/guardar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                usuario_id: usuarioId,
+                direccion: direccion,
+                latitud: latitud,
+                longitud: longitud,
+                usa_estufa: usa_estufa,
+                frecuencia: frecuencia,
+                comentario: comentario || ''
+            })
+        });
+        
+        const data = await response.json();
+        console.log('Respuesta del servidor:', data);
+        
+        if (data.success) {
+            mostrarExito('Datos guardados correctamente. Redirigiendo...');
+            setTimeout(() => {
+                window.location.href = 'resultado-personal.html';
+            }, 2000);
+        } else {
+            mostrarError(data.message);
+        }
+    } catch (error) {
+        console.error('Error detallado:', error);
+        mostrarError('Error al guardar datos: ' + error.message);
+    }
+}
+
+function mostrarError(mensaje) {
+    const errorDiv = document.getElementById('mensajeError');
+    errorDiv.textContent = mensaje;
+    errorDiv.style.display = 'block';
+    setTimeout(() => {
+        errorDiv.style.display = 'none';
+    }, 4000);
+}
+
+function mostrarExito(mensaje) {
+    const exitoDiv = document.getElementById('mensajeExito');
+    exitoDiv.textContent = mensaje;
+    exitoDiv.style.display = 'block';
+}

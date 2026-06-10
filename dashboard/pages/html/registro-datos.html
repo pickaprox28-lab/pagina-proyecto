@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Datos - Estufas a Leña</title>
+    <link rel="stylesheet" href="../../../css/dashboard.css">
+    <link rel="stylesheet" href="../../../css/styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <div class="form-container">
+        <div class="form-card">
+            <h1>📝 Registro de Consumo de Leña</h1>
+            <p class="subtitle">Completa el formulario para contribuir a las estadísticas comunales</p>
+            
+            <div id="mensajeError" class="error-message" style="display: none;"></div>
+            <div id="mensajeExito" class="success-message" style="display: none;"></div>
+            
+            <form id="registroForm">
+                <!-- Sección Mapa -->
+                <div class="form-section">
+                    <h3>📍 Selecciona tu dirección en el mapa</h3>
+                    <div id="mapa" style="height: 300px; margin-bottom: 15px;"></div>
+                    <input type="hidden" id="latitud" required>
+                    <input type="hidden" id="longitud" required>
+                    <div class="input-group">
+                        <label for="direccion">Dirección confirmada:</label>
+                        <input type="text" id="direccion" required placeholder="Calle, número, comuna" readonly>
+                    </div>
+                </div>
+                
+                <!-- Sección Estufa -->
+                <div class="form-section">
+                    <h3>🔥 Uso de estufa a leña</h3>
+                    <div class="question">
+                        <label>¿Usas estufa a leña?</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="usa_estufa" value="si" required> Sí</label>
+                            <label><input type="radio" name="usa_estufa" value="no"> No</label>
+                        </div>
+                    </div>
+                    
+                    <div id="frecuenciaSection" style="display: none;">
+                        <div class="question">
+                            <label>Frecuencia de uso:</label>
+                            <div class="radio-group">
+                                <label><input type="radio" name="frecuencia" value="todos los dias"> Todos los días</label>
+                                <label><input type="radio" name="frecuencia" value="a veces"> A veces</label>
+                                <label><input type="radio" name="frecuencia" value="solo cuando hace frío"> Solo cuando hace frío</label>
+                            </div>
+                        </div>
+                        
+                        <div class="question">
+                            <label>Comentario adicional (opcional):</label>
+                            <textarea id="comentario" rows="3" placeholder="Ej: Solo cocino con leña, uso para calefacción, etc."></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-primary">Enviar Datos</button>
+                <button type="button" class="btn-secondary" onclick="window.location.href='../../dashboard.html'">Cancelar</button>
+            </form>
+        </div>
+    </div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="../js/registro.js"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soporte - Reportar Dirección</title>
+    <link rel="stylesheet" href="../../../css/dashboard.css">
+    <link rel="stylesheet" href="../../../css/styles.css">
+</head>
+<body>
+    <div class="form-container">
+        <div class="form-card">
+            <h1>🛡️ Reportar Dirección</h1>
+            <p class="subtitle">¿Alguien registró tu dirección sin autorización? Repórtalo aquí.</p>
+            
+            <div id="mensajeError" class="error-message" style="display: none;"></div>
+            <div id="mensajeExito" class="success-message" style="display: none;"></div>
+            
+            <form id="reporteForm">
+                <div class="form-section">
+                    <h3>📍 Dirección afectada</h3>
+                    <div class="input-group">
+                        <label for="direccion">Dirección completa:</label>
+                        <input type="text" id="direccion" required placeholder="Calle, número, comuna">
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>📝 Detalles del reporte</h3>
+                    <div class="input-group">
+                        <label for="descripcion">Describe el problema:</label>
+                        <textarea id="descripcion" rows="4" required placeholder="Ej: Yo vivo en esta dirección pero otra persona la registró..."></textarea>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-primary">Enviar Reporte</button>
+                <button type="button" class="btn-secondary" onclick="window.location.href='../../dashboard.html'">Cancelar</button>
+            </form>
+        </div>
+    </div>
+    
+    <script src="../js/soporte.js"></script>
+</body>
+</html>

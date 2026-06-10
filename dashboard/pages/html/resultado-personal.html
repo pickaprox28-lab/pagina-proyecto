@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Impacto Personal</title>
+    <link rel="stylesheet" href="../../../css/dashboard.css">
+    <link rel="stylesheet" href="../../../css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="result-container">
+        <div class="result-card">
+            <h1>📊 Mi Impacto Personal</h1>
+            
+            <div id="loadingMessage" class="loading">Cargando tus datos...</div>
+            
+            <div id="resultContent" style="display: none;">
+                <div class="impact-circle">
+                    <canvas id="impactChart" width="200" height="200"></canvas>
+                    <div class="impact-percentage" id="porcentajeTexto">0%</div>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>🔥 Frecuencia de uso</h3>
+                        <p id="frecuenciaTexto">-</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>🌫️ Emisiones mensuales</h3>
+                        <p id="kgCO2Texto">0 kg CO2</p>
+                    </div>
+                </div>
+                
+                <div class="recomendaciones-section">
+                    <h3>💡 Recomendaciones para reducir tu impacto</h3>
+                    <ul id="recomendacionesLista"></ul>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn-primary" onclick="window.location.href='resultado-comunal.html'">
+                        Ver Impacto Comunal →
+                    </button>
+                    <button class="btn-secondary" onclick="window.location.href='../../dashboard.html'">
+                        Volver al Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="../js/resultado-personal.js"></script>
+</body>
+</html>

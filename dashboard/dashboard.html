@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema de Calidad del Aire</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h1>🌍 Monitoreo de Calidad del Aire</h1>
+            <div class="user-info-header">
+                <span id="userName"></span>
+                <button id="logoutBtn" class="logout-small">Cerrar Sesión</button>
+            </div>
+        </div>
+        
+        <div class="dashboard-content">
+            <div class="status-card" id="statusCard">
+                <div class="status-icon">📋</div>
+                <h3>Estado del Registro <span id="anioTexto"></span></h3>
+                <p id="estadoRegistro">Verificando...</p>
+                <button id="actionBtn" class="btn-primary">Cargando...</button>
+            </div>
+            
+            <div class="info-card">
+                <h3>ℹ️ Sobre el Sistema</h3>
+                <p>Este sistema ayuda a medir el impacto del uso de estufas a leña en la calidad del aire de nuestra comuna.</p>
+                <ul>
+                    <li>✅ Registra tu consumo de leña</li>
+                    <li>📊 Obtén tu impacto personal</li>
+                    <li>🌎 Contribuye a estadísticas comunales</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="dashboard-links" id="dashboardLinks" style="display: none;">
+            <div class="card-link" onclick="verResultadoPersonal()">
+                <div class="card-icon">📊</div>
+                <h3>Mi Impacto Personal</h3>
+                <p>Revisa tu huella de contaminación</p>
+            </div>
+            
+            <div class="card-link" onclick="verResultadoComunal()">
+                <div class="card-icon">🏘️</div>
+                <h3>Impacto Comunal</h3>
+                <p>Estadísticas de toda la comuna</p>
+            </div>
+            
+            <div class="card-link" onclick="irSoporte()">
+                <div class="card-icon">🛡️</div>
+                <h3>Reportar Dirección</h3>
+                <p>¿Alguien usó tu dirección?</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="dashboard.js"></script>
+</body>
+</html>
