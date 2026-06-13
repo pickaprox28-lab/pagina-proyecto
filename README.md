@@ -2,18 +2,12 @@
 
 Proyecto web con autenticación, dashboard y un backend en Node.js que guarda datos en archivos CSV.
 
-## Requisitos
-
-- Windows, macOS o Linux
-- Node.js 18 o superior
-- npm incluido con Node.js
-
 ## Instalar Node.js
 
 1. Ve a [https://nodejs.org/](https://nodejs.org/)
 2. Descarga la versión LTS.
 3. Instálala con las opciones por defecto.
-4. Verifica la instalación en una terminal:
+4. Verifica la instalación en el terminal:
 
 ```bash
 node -v
@@ -31,11 +25,9 @@ cd servidor
 npm install
 ```
 
-Eso instalará `express`, `cors` y `multer`.
-
 ## Levantar el servidor
 
-Desde la carpeta raíz del proyecto:
+Desde la carpeta del proyecto abrir una termial:
 
 ```bash
 cd servidor
