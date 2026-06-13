@@ -21,10 +21,10 @@ body{
   box-shadow: 0 10px 25px rgba(0,0,0,0.2);
 }
 
-h2{
-  text-align: center;
-  margin-bottom: 25px;
-  color: #333;
+h1, h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #333;
 }
 
 .input-group{
@@ -133,4 +133,16 @@ input:focus{
   display: flex;
   justify-content: center;
   margin: 15px 0;
+}
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-10px); }
+  100% { transform: translateX(0); }
+}
+
+.shake {
+  animation: shake 0.5s;
 }

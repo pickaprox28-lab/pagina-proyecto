@@ -1,4 +1,4 @@
-// Lógica de autenticación con Node.js backend
+
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('loginForm');
     const mensajeError = document.getElementById('mensajeError');
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', async function(event) {
         event.preventDefault();
         
-        const email = document.getElementById('usuario').value;
+        const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         
         mensajeError.style.display = 'none';
