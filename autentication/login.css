@@ -6,11 +6,12 @@
 }
 
 body{
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
   background: linear-gradient(135deg, #4facfe, #00f2fe);
+  padding: 24px;
 }
 
 .container{
@@ -77,6 +78,32 @@ input:focus{
 
 .login-btn:hover{
   background: #008cff;
+}
+
+.login-btn:disabled{
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.error-message,
+.success-message{
+  margin-bottom: 16px;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.error-message{
+  color: #842029;
+  background: #f8d7da;
+  border: 1px solid #f5c2c7;
+}
+
+.success-message{
+  color: #0f5132;
+  background: #d1e7dd;
+  border: 1px solid #badbcc;
 }
 
 .register-link{

@@ -3,6 +3,11 @@ let mapa;
 let marcador;
 
 document.addEventListener('DOMContentLoaded', function() {
+    if (!localStorage.getItem('usuarioActual')) {
+        window.location.href = '/autentication/login.html';
+        return;
+    }
+
     inicializarMapa();
     
     // Mostrar/ocultar sección de frecuencia
@@ -105,7 +110,7 @@ async function enviarRegistro(event) {
     }
     
     try {
-        const response = await fetch('http://localhost:3000/api/estufa/guardar', {
+        const response = await fetch('/api/estufa/guardar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

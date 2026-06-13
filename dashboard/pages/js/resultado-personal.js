@@ -1,15 +1,15 @@
 document.addEventListener('DOMContentLoaded', async function() {
     const usuarioId = localStorage.getItem('usuarioActual');
-    
+
     if (!usuarioId) {
-        window.location.href = '../../Autentication/html/login.html';
+        window.location.href = '/autentication/login.html';
         return;
     }
-    
+
     try {
-        const response = await fetch(`http://localhost:3000/api/resultado/personal/${usuarioId}`);
+        const response = await fetch(`/api/resultado/personal/${encodeURIComponent(usuarioId)}`);
         const data = await response.json();
-        
+
         if (data.success) {
             mostrarResultados(data.data);
         } else {
@@ -24,13 +24,11 @@ document.addEventListener('DOMContentLoaded', async function() {
 function mostrarResultados(data) {
     document.getElementById('loadingMessage').style.display = 'none';
     document.getElementById('resultContent').style.display = 'block';
-    
-    // Textos
+
     document.getElementById('frecuenciaTexto').textContent = capitalizar(data.frecuencia);
     document.getElementById('kgCO2Texto').textContent = `${data.kgCO2} kg CO2`;
     document.getElementById('porcentajeTexto').textContent = `${data.porcentaje}%`;
-    
-    // Recomendaciones
+
     const lista = document.getElementById('recomendacionesLista');
     lista.innerHTML = '';
     data.recomendaciones.forEach(rec => {
@@ -38,8 +36,7 @@ function mostrarResultados(data) {
         li.textContent = rec;
         lista.appendChild(li);
     });
-    
-    // Gráfico circular
+
     const ctx = document.getElementById('impactChart').getContext('2d');
     new Chart(ctx, {
         type: 'doughnut',
@@ -68,12 +65,12 @@ function capitalizar(str) {
 
 function mostrarMensajeSinDatos() {
     const loading = document.getElementById('loadingMessage');
-    loading.innerHTML = '⚠️ No has registrado datos para este año. <a href="registro-datos.html">Haz clic aquí para registrar</a>';
+    loading.innerHTML = 'No has registrado datos para este año. <a href="registro-datos.html">Haz clic aquí para registrar</a>';
     loading.style.color = '#ff9800';
 }
 
 function mostrarMensajeError() {
     const loading = document.getElementById('loadingMessage');
-    loading.innerHTML = '❌ Error al cargar tus datos. Asegúrate que el backend esté corriendo.';
+    loading.innerHTML = 'Error al cargar tus datos. Abre la app desde http://localhost:3000.';
     loading.style.color = '#f44336';
 }

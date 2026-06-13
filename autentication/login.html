@@ -4,12 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión</title>
-
-    <!-- CSS principal -->
     <link rel="stylesheet" href="login.css">
-
-    <!-- CAPTCHA -->
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
 
@@ -17,7 +12,7 @@
 
     <div class="login-box">
 
-        <a href="index.html" class="close-btn">×</a>
+        <a href="../index.html" class="close-btn">×</a>
 
         <h1>Iniciar Sesión</h1>
 
@@ -58,16 +53,7 @@
                 </div>
             </div>
 
-            <div class="recaptcha-container">
-                <div
-                    class="g-recaptcha"
-                    data-sitekey="6Ldxev8sAAAAAKLjNqd3kQQS776nvI_kLnOJAXVZ">
-                </div>
-            </div>
-
-            <br>
-
-            <button type="submit">
+            <button type="submit" class="login-btn">
                 Iniciar Sesión
             </button>
 
@@ -75,65 +61,14 @@
 
         <p class="register-link">
             ¿No tienes cuenta?
-            <a href="sign_up.html">Regístrate aquí</a>
+            <a href="register.html">Regístrate aquí</a>
         </p>
 
     </div>
 
 </div>
 
-<script>
-function mostrarPassword() {
-
-    const password = document.getElementById("password");
-
-    if (password.type === "password") {
-        password.type = "text";
-    } else {
-        password.type = "password";
-    }
-}
-
-function login(event) {
-
-    event.preventDefault();
-
-    const mensajeError = document.getElementById("mensajeError");
-
-    const captcha = grecaptcha.getResponse();
-
-    if (captcha.length === 0) {
-
-        mensajeError.style.display = "block";
-        mensajeError.textContent = "Debes completar el CAPTCHA.";
-
-        return;
-    }
-
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-
-    const usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
-
-    const usuarioValido = usuarios.find(
-        user => user.email === email && user.password === password
-    );
-
-    if (usuarioValido) {
-
-        alert("Bienvenido " + usuarioValido.nombre);
-
-        window.location.href = "index.html";
-
-    } else {
-
-        mensajeError.style.display = "block";
-        mensajeError.textContent = "Correo o contraseña incorrectos.";
-
-        grecaptcha.reset();
-    }
-}
-</script>
+<script src="js/login.js"></script>
 
 </body>
 </html>

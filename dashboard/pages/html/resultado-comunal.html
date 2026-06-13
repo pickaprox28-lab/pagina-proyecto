@@ -11,42 +11,42 @@
 <body>
     <div class="result-container">
         <div class="result-card">
-            <h1>🏘️ Impacto Comunal</h1>
-            <p class="subtitle">Estadísticas del año <span id="añoTexto"></span></p>
-            
+            <h1>Impacto Comunal</h1>
+            <p class="subtitle">Estadísticas del año <span id="anioTexto"></span></p>
+
             <div id="loadingMessage" class="loading">Cargando estadísticas comunales...</div>
-            
+
             <div id="resultContent" style="display: none;">
                 <div class="stats-grid">
                     <div class="stat-card comunal">
-                        <h3>🏠 Viviendas registradas</h3>
+                        <h3>Viviendas registradas</h3>
                         <p id="totalViviendas" class="big-number">0</p>
                     </div>
                     <div class="stat-card comunal">
-                        <h3>🔥 Chimeneas activas estimadas</h3>
+                        <h3>Chimeneas activas estimadas</h3>
                         <p id="chimeneasActivas" class="big-number">0</p>
                     </div>
                 </div>
-                
+
                 <div class="chart-container">
-                    <h3>📊 Distribución de frecuencia de uso</h3>
+                    <h3>Distribución de frecuencia de uso</h3>
                     <canvas id="frecuenciasChart" height="200"></canvas>
                 </div>
-                
+
                 <div class="chart-container">
-                    <h3>🌫️ Contaminación total estimada</h3>
+                    <h3>Contaminación total estimada</h3>
                     <canvas id="contaminacionChart" height="200"></canvas>
                     <p id="contaminacionTotal" class="center-text"></p>
                 </div>
-                
+
                 <div class="calidad-aire-section">
-                    <h3>📡 Calidad del aire (datos reales)</h3>
+                    <h3>Calidad del aire (datos reales)</h3>
                     <div id="calidadAireTabla"></div>
                 </div>
-                
+
                 <div class="action-buttons">
                     <button class="btn-primary" onclick="window.location.href='resultado-personal.html'">
-                        ← Mi Impacto Personal
+                        Mi Impacto Personal
                     </button>
                     <button class="btn-secondary" onclick="window.location.href='../../dashboard.html'">
                         Volver al Dashboard
@@ -55,7 +55,7 @@
             </div>
         </div>
     </div>
-    
+
     <script src="../js/resultado-comunal.js"></script>
 </body>
 </html>

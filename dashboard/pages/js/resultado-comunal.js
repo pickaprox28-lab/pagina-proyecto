@@ -1,10 +1,10 @@
 document.addEventListener('DOMContentLoaded', async function() {
-    document.getElementById('añoTexto').textContent = new Date().getFullYear();
-    
+    document.getElementById('anioTexto').textContent = new Date().getFullYear();
+
     try {
-        const response = await fetch('http://localhost:3000/api/resultado/comunal');
+        const response = await fetch('/api/resultado/comunal');
         const data = await response.json();
-        
+
         if (data.success) {
             mostrarResultados(data.data);
         } else {
@@ -19,14 +19,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 function mostrarResultados(data) {
     document.getElementById('loadingMessage').style.display = 'none';
     document.getElementById('resultContent').style.display = 'block';
-    
-    // Estadísticas principales
+
     document.getElementById('totalViviendas').textContent = data.total_viviendas;
     document.getElementById('chimeneasActivas').textContent = data.chimeneas_activas_estimadas;
-    document.getElementById('contaminacionTotal').textContent = 
+    document.getElementById('contaminacionTotal').textContent =
         `Contaminación total estimada: ${data.contaminacion_total_estimada} kg CO2/mes`;
-    
-    // Gráfico de frecuencias
+
     const ctxFrecuencias = document.getElementById('frecuenciasChart').getContext('2d');
     new Chart(ctxFrecuencias, {
         type: 'bar',
@@ -45,8 +43,7 @@ function mostrarResultados(data) {
         },
         options: { responsive: true, maintainAspectRatio: true }
     });
-    
-    // Gráfico de contaminación total (mock)
+
     const ctxContaminacion = document.getElementById('contaminacionChart').getContext('2d');
     new Chart(ctxContaminacion, {
         type: 'line',
@@ -66,8 +63,7 @@ function mostrarResultados(data) {
         },
         options: { responsive: true, maintainAspectRatio: true }
     });
-    
-    // Tabla de calidad del aire
+
     if (data.calidad_aire_reciente && data.calidad_aire_reciente.length > 0) {
         const tablaHtml = `
             <table class="data-table">
@@ -94,6 +90,6 @@ function mostrarResultados(data) {
 
 function mostrarMensajeError(mensaje) {
     const loading = document.getElementById('loadingMessage');
-    loading.innerHTML = `❌ ${mensaje}`;
+    loading.innerHTML = mensaje;
     loading.style.color = '#f44336';
 }

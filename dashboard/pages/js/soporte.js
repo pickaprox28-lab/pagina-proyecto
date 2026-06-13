@@ -1,24 +1,24 @@
 document.getElementById('reporteForm').addEventListener('submit', async function(event) {
     event.preventDefault();
-    
+
     const direccion = document.getElementById('direccion').value;
     const descripcion = document.getElementById('descripcion').value;
     const reportadoPor = localStorage.getItem('usuarioActual');
-    
+
     if (!reportadoPor) {
-        window.location.href = '../../Autentication/html/login.html';
+        window.location.href = '/autentication/login.html';
         return;
     }
-    
+
     try {
-        const response = await fetch('http://localhost:3000/api/reportar/direccion', {
+        const response = await fetch('/api/reportar/direccion', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ direccion, reportado_por: reportadoPor, descripcion })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             mostrarExito('Reporte enviado correctamente. Nos contactaremos contigo pronto.');
             document.getElementById('reporteForm').reset();

@@ -46,7 +46,7 @@ Si todo está bien, verás un mensaje similar a este:
 
 ```text
 Servidor corriendo en http://localhost:3000
-Accede a: http://localhost:3000/Dashboard/dashboard.html
+Accede a: http://localhost:3000/dashboard/dashboard.html
 ```
 
 ## Abrir la aplicación
@@ -54,13 +54,14 @@ Accede a: http://localhost:3000/Dashboard/dashboard.html
 Una vez iniciado el servidor, abre en tu navegador:
 
 - `http://localhost:3000/`
-- `http://localhost:3000/Autentication/html/login.html`
-- `http://localhost:3000/Dashboard/dashboard.html`
+- `http://localhost:3000/autentication/login.html`
+- `http://localhost:3000/autentication/register.html`
+- `http://localhost:3000/dashboard/dashboard.html`
 
 ## Estructura del proyecto
 
-- `Autentication/` contiene login y registro de usuarios.
-- `Dashboard/` contiene el panel principal y las páginas de resultados.
+- `autentication/` contiene login y registro de usuarios.
+- `dashboard/` contiene el panel principal y las páginas de resultados.
 - `css/` contiene los estilos globales y del dashboard.
 - `data/` contiene los CSV con la información guardada.
 - `servidor/` contiene el backend en Node.js.
