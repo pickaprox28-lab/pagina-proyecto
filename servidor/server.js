@@ -19,7 +19,7 @@ const DIRECCIONES_CSV = path.join(DATA_DIR, 'direcciones.csv');
 const REPORTES_CSV = path.join(DATA_DIR, 'reportes.csv');
 const CALIDAD_AIRE_CSV = path.join(DATA_DIR, 'calidad_aire_mock.csv');
 
-// ============ FUNCIONES AUXILIARES ============
+// FUNCIONES AUXILIARES
 
 async function leerCSV(filePath, encabezados) {
     try {
@@ -109,7 +109,7 @@ function parseCSVLine(line) {
     return result.map(r => r.replace(/^"|"$/g, ''));
 }
 
-// ============ INICIALIZAR ARCHIVOS CSV ============
+// INICIALIZAR ARCHIVOS CSV
 
 async function inicializarArchivos() {
     // Asegurar que la carpeta data existe
@@ -131,18 +131,18 @@ async function inicializarArchivos() {
     await leerCSV(CALIDAD_AIRE_CSV, ['fecha', 'estacion', 'mp25', 'mp10', 'chimeneas_estimadas']);
 }
 
-// ============ ENDPOINTS API ============
+// ENDPOINTS API
 
-// ============ LOGIN Y REGISTRO ============
+// LOGIN Y REGISTRO
 
 // Login
 app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-        console.log(`🔐 Intento de login: ${email}`);
+        console.log(`Intento de login: ${email}`);
         
         const usuarios = await leerCSV(USUARIOS_CSV, ['usuario', 'contraseña', 'email', 'nombre_completo']);
-        console.log(`📋 Usuarios cargados: ${usuarios.length}`);
+        console.log(`Usuarios cargados: ${usuarios.length}`);
         
         const user = usuarios.find(u => u.email === email && u['contraseña'] === password);
         
@@ -151,7 +151,7 @@ app.post('/api/login', async (req, res) => {
             return res.json({ success: false, message: 'Credenciales inválidas' });
         }
         
-        console.log(`✅ Login exitoso: ${user.usuario}`);
+        console.log(`Login exitoso: ${user.usuario}`);
         res.json({ 
             success: true, 
             user: { 
@@ -170,7 +170,7 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/register', async (req, res) => {
     try {
         const { nombre, usuario, email, password } = req.body;
-        console.log(`📝 Intento de registro: ${usuario} - ${email}`);
+        console.log(`Intento de registro: ${usuario} - ${email}`);
         
         const usuarios = await leerCSV(USUARIOS_CSV, ['usuario', 'contraseña', 'email', 'nombre_completo']);
 
@@ -200,7 +200,7 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// ============ ENDPOINTS DEL SISTEMA DE ESTUFAS ============
+// ENDPOINTS DEL SISTEMA DE ESTUFAS
 
 // 1. Guardar datos de estufa
 app.post('/api/estufa/guardar', async (req, res) => {
@@ -314,11 +314,11 @@ function calcularContaminacionPersonal(frecuencia) {
 
 function obtenerRecomendaciones(frecuencia) {
     const recomendacionesMap = {
-        "si": ["✅ Reduce el uso a días específicos", "✅ Usa leña seca (menos humo)", "✅ Mantén la estufa bien regulada"],
-        "todos los dias": ["✅ Reduce el uso a días específicos", "✅ Usa leña seca (menos humo)", "✅ Mantén la estufa bien regulada"],
-        "a veces": ["✅ Buen trabajo reduciendo el uso", "✅ Considera alternativas como estufa a pellet", "✅ Ventila bien los espacios"],
-        "solo cuando hace frío": ["✅ Excelente control de uso", "✅ Aísla mejor tu casa para menos frío", "✅ Comparte tus hábitos con vecinos"],
-        "no": ["✅ Excelente! No generas contaminación por estufa", "✅ Eres un ejemplo para la comunidad"]
+        "si": ["Reduce el uso a días específicos", "Usa leña seca (menos humo)", "Mantén la estufa bien regulada"],
+        "todos los dias": ["Reduce el uso a días específicos", "Usa leña seca (menos humo)", "Mantén la estufa bien regulada"],
+        "a veces": ["Buen trabajo reduciendo el uso", "Considera alternativas como estufa a pellet", "Ventila bien los espacios"],
+        "solo cuando hace frío": ["Excelente control de uso", "Aísla mejor tu casa para menos frío", "Comparte tus hábitos con vecinos"],
+        "no": ["Excelente! No generas contaminación por estufa", "Eres un ejemplo para la comunidad"]
     };
     return recomendacionesMap[frecuencia?.toLowerCase()] || ["Sigue así!"];
 }
@@ -441,7 +441,7 @@ app.get('/api/captcha/obtener', (req, res) => {
     });
 });
 
-// ============ INICIAR SERVIDOR ============
+// INICIAR SERVIDOR 
 
 // Endpoint debug (temporal) para listar estufas parseadas
 app.get('/api/debug/estufas', async (req, res) => {
@@ -455,10 +455,10 @@ app.get('/api/debug/estufas', async (req, res) => {
 
 inicializarArchivos().then(() => {
     app.listen(PORT, () => {
-        console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-        console.log(`📁 Accede a: http://localhost:${PORT}/Dashboard/dashboard.html`);
-        console.log(`📂 Datos en: ${DATA_DIR}`);
-        console.log(`\n📋 Credenciales de prueba:`);
+        console.log(`Servidor corriendo en http://localhost:${PORT}`);
+        console.log(`Accede a: http://localhost:${PORT}/Dashboard/dashboard.html`);
+        console.log(`Datos en: ${DATA_DIR}`);
+        console.log(`\nCredenciales de prueba:`);
         console.log(`   admin@ejemplo.com / 1234`);
         console.log(`   maria@ejemplo.com / 5678`);
         console.log(`   juan@ejemplo.com / abcd`);
