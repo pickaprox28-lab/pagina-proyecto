@@ -6,12 +6,15 @@
     }
 
     body{
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: linear-gradient(135deg, #4facfe, #00f2fe);
-      padding: 24px;
+     min-height: 100vh;
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     background-image: url(/css/images/chimenea.png);
+     background-position: center center;
+     background-size: cover;
+     background-attachment: fixed;
+     padding: 24px;
     }
 
     .container{

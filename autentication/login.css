@@ -1,3 +1,4 @@
+
 *{
   margin: 0;
   padding: 0;
@@ -10,12 +11,16 @@ body{
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #4facfe, #00f2fe);
-  padding: 24px;
+  background-image: url(/css/images/chimenea.png);
+  background-position: center center;
+  background-size: cover;
+  background-attachment: fixed;
+  padding: 24px;    
+  
 }
 
 .container{
-  background: rgb(255, 255, 255);
+  background: rgba(196, 13, 13, 0.86);
   width: 350px;
   padding: 40px;
   border-radius: 15px;

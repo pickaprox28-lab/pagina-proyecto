@@ -19,10 +19,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    cargarCaptcha();
-    const refreshBtn = document.getElementById('refreshCaptcha');
-    if (refreshBtn) refreshBtn.addEventListener('click', cargarCaptcha);
-
     form.addEventListener('submit', async function(event) {
         event.preventDefault();
 
@@ -50,12 +46,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const captchaRespuesta = parseInt(document.getElementById('captchaRespuesta')?.value, 10);
-        if (Number.isNaN(captchaRespuesta) || captchaRespuesta !== captchaActual.resultado) {
-            mostrarError('Captcha incorrecto. Intenta nuevamente.');
-            cargarCaptcha();
-            return;
-        }
 
         submitBtn.disabled = true;
         submitBtn.textContent = 'Registrando...';
@@ -75,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 mostrarExitoYRedirigir();
             } else {
                 mostrarError(data.message || 'No se pudo registrar el usuario.');
-                cargarCaptcha();
+                
             }
         } catch (error) {
             console.error('Error:', error);
@@ -105,22 +95,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-let captchaActual = { pregunta: '', resultado: 0 };
-
-async function cargarCaptcha() {
-    try {
-        const response = await fetch('/api/captcha/obtener');
-        const data = await response.json();
-        captchaActual = { pregunta: data.pregunta, resultado: data.resultadoEsperado };
-
-        const preguntaEl = document.getElementById('captchaPregunta');
-        if (preguntaEl) preguntaEl.textContent = data.pregunta;
-
-        const respuestaEl = document.getElementById('captchaRespuesta');
-        if (respuestaEl) respuestaEl.value = '';
-    } catch (error) {
-        console.error('Error cargando captcha:', error);
-        const preguntaEl = document.getElementById('captchaPregunta');
-        if (preguntaEl) preguntaEl.textContent = 'No disponible';
-    }
-}
