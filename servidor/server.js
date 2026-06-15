@@ -6,7 +6,6 @@ const path = require('path');
 const app = express();
 const PORT = 3000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..')));
@@ -19,7 +18,7 @@ const DIRECCIONES_CSV = path.join(DATA_DIR, 'direcciones.csv');
 const REPORTES_CSV = path.join(DATA_DIR, 'reportes.csv');
 const CALIDAD_AIRE_CSV = path.join(DATA_DIR, 'calidad_aire_mock.csv');
 
-// FUNCIONES AUXILIARES
+// FUNCIONES
 
 async function leerCSV(filePath, encabezados) {
     try {
@@ -39,29 +38,25 @@ async function leerCSV(filePath, encabezados) {
                     obj[headers[j]] = valores[j];
                 }
             } else {
-                // Intentar reconstruir campos cuando algunos contienen comas (direcciones)
                 if (headers.includes('latitud') && headers.includes('longitud')) {
-                    // id, usuario_id, direccion(.*), latitud, longitud, ...rest
+                    // id, usuario_id, direccion(.*), latitud, longitud
                     const latIdx = valores.findIndex(v => /^-?\d+\.\d+$/.test(v));
                     if (latIdx > 2 && latIdx < valores.length - 1) {
                         const lonIdx = latIdx + 1;
                         const direccionArr = valores.slice(2, latIdx);
                         const direccion = direccionArr.join(', ');
 
-                        // Map known positions
                         obj[headers[0]] = valores[0] || '';
                         obj[headers[1]] = valores[1] || '';
                         obj[headers[2]] = direccion;
                         obj[headers[3]] = valores[latIdx] || '';
                         obj[headers[4]] = valores[lonIdx] || '';
 
-                        // Resto map (if available)
                         let restStart = lonIdx + 1;
                         for (let j = 5; j < headers.length && restStart < valores.length; j++, restStart++) {
                             obj[headers[j]] = valores[restStart] || '';
                         }
-                    } else {
-                        // Fallback: assign what we can
+                    } else 
                         for (let j = 0; j < Math.min(headers.length, valores.length); j++) obj[headers[j]] = valores[j];
                     }
                 } else {
@@ -89,7 +84,6 @@ async function escribirCSV(filePath, datos, encabezados) {
     await fs.writeFile(filePath, csvContent, 'utf-8');
 }
 
-// Parse a CSV line respecting quoted fields
 function parseCSVLine(line) {
     const result = [];
     let cur = '';
@@ -147,7 +141,7 @@ app.post('/api/login', async (req, res) => {
         const user = usuarios.find(u => u.email === email && u['contraseña'] === password);
         
         if (!user) {
-            console.log(`❌ Login fallido para: ${email}`);
+            console.log(`Login fallido para: ${email}`);
             return res.json({ success: false, message: 'Credenciales inválidas' });
         }
         
@@ -192,7 +186,7 @@ app.post('/api/register', async (req, res) => {
         usuarios.push(nuevo);
         await escribirCSV(USUARIOS_CSV, usuarios, ['usuario', 'contraseña', 'email', 'nombre_completo']);
 
-        console.log(`✅ Registro exitoso: ${usuario}`);
+        console.log(`Registro exitoso: ${usuario}`);
         res.json({ success: true, message: 'Registro exitoso' });
     } catch (error) {
         console.error('Error en registro:', error);
@@ -443,7 +437,6 @@ app.get('/api/captcha/obtener', (req, res) => {
 
 // INICIAR SERVIDOR 
 
-// Endpoint debug (temporal) para listar estufas parseadas
 app.get('/api/debug/estufas', async (req, res) => {
     try {
         const datos = await leerCSV(ESTUFAS_CSV, ['id','usuario_id','direccion','latitud','longitud','usa_estufa','frecuencia','comentario','fecha_registro','año']);
@@ -465,7 +458,6 @@ inicializarArchivos().then(() => {
     });
 });
 
-// Endpoint debug (temporal) para reparar datos_estufas.csv con heurística
 app.post('/api/debug/repair-estufas', async (req, res) => {
     try {
         const raw = await fs.readFile(ESTUFAS_CSV, 'utf-8');
@@ -477,7 +469,6 @@ app.post('/api/debug/repair-estufas', async (req, res) => {
         const repaired = [];
 
         for (const line of dataLines) {
-            // split naive, then find lat/lon pair (two floats) and reconstruct
             const parts = line.split(',').map(p => p.trim());
             let latIdx = -1;
             for (let i = 0; i < parts.length - 1; i++) {
@@ -492,7 +483,7 @@ app.post('/api/debug/repair-estufas', async (req, res) => {
                 const latitud = parts[latIdx] || '';
                 const longitud = parts[latIdx+1] || '';
                 const rest = parts.slice(latIdx+2);
-                // rest expected: usa_estufa,frecuencia,comentario,fecha_registro,año (may be missing)
+                // usa_estufa,frecuencia,comentario,fecha_registro,año
                 const usa_estufa = rest[0] || '';
                 const frecuencia = rest[1] || '';
                 const comentario = rest[2] || '';
@@ -501,7 +492,6 @@ app.post('/api/debug/repair-estufas', async (req, res) => {
 
                 repaired.push({ id, usuario_id, direccion, latitud, longitud, usa_estufa, frecuencia, comentario, fecha_registro, año });
             } else {
-                // skip malformed
             }
         }
 
