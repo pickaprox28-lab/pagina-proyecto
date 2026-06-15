@@ -12,26 +12,51 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Mostrar/ocultar sección de frecuencia
     const radiosEstufa = document.querySelectorAll('input[name="usa_estufa"]');
+    const radiosFrecuencia = document.querySelectorAll('input[name="frecuencia"]');
+    const porcentajeUsoSection = document.getElementById('porcentajeUsoSection');
+    const porcentajeUsoInput = document.getElementById('porcentajeUso');
+
     radiosEstufa.forEach(radio => {
         radio.addEventListener('change', function() {
             const frecuenciaSection = document.getElementById('frecuenciaSection');
             if (this.value === 'si') {
                 frecuenciaSection.style.display = 'block';
-                document.querySelectorAll('input[name="frecuencia"]').forEach(r => r.required = true);
+                radiosFrecuencia.forEach(r => r.required = true);
             } else {
                 frecuenciaSection.style.display = 'none';
-                document.querySelectorAll('input[name="frecuencia"]').forEach(r => r.required = false);
+                radiosFrecuencia.forEach(r => {
+                    r.required = false;
+                    r.checked = false;
+                });
+                ocultarPorcentajeUso();
             }
         });
     });
+
+    radiosFrecuencia.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'a veces') {
+                porcentajeUsoSection.style.display = 'block';
+                porcentajeUsoInput.required = true;
+            } else {
+                ocultarPorcentajeUso();
+            }
+        });
+    });
+
+    function ocultarPorcentajeUso() {
+        porcentajeUsoSection.style.display = 'none';
+        porcentajeUsoInput.required = false;
+        porcentajeUsoInput.value = '';
+    }
     
     // Submit del formulario
     document.getElementById('registroForm').addEventListener('submit', enviarRegistro);
 });
 
 function inicializarMapa() {
-    // Centro de Santiago como ejemplo
-    mapa = L.map('mapa').setView([-33.45694, -70.64827], 13);
+    // Centro de Puerto Montt
+    mapa = L.map('mapa').setView([-41.4693, -72.9424], 12);
     
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
@@ -75,6 +100,8 @@ async function enviarRegistro(event) {
     // Obtener el valor de frecuencia
     const frecuenciaRadio = document.querySelector('input[name="frecuencia"]:checked');
     const frecuencia = frecuenciaRadio ? frecuenciaRadio.value : 'no';
+    const porcentajeUsoInput = document.getElementById('porcentajeUso');
+    const porcentaje_uso = frecuencia === 'a veces' ? porcentajeUsoInput.value : '';
     
     const comentario = document.getElementById('comentario').value;
     const direccion = document.getElementById('direccion').value;
@@ -88,12 +115,13 @@ async function enviarRegistro(event) {
         longitud,
         usa_estufa,
         frecuencia,
+        porcentaje_uso,
         comentario
     });
     
     // Validar que se seleccionó respuesta
     if (!usa_estufa) {
-        mostrarError('Por favor selecciona si usas o no estufa a leña');
+        mostrarError('Por favor selecciona si tienes o no estufa a leña');
         return;
     }
     
@@ -108,6 +136,14 @@ async function enviarRegistro(event) {
         mostrarError('Por favor selecciona la frecuencia de uso');
         return;
     }
+
+    if (usa_estufa === 'si' && frecuencia === 'a veces') {
+        const porcentajeUso = Number(porcentaje_uso);
+        if (!Number.isFinite(porcentajeUso) || porcentajeUso < 1 || porcentajeUso > 99) {
+            mostrarError('Ingresa un porcentaje de uso mensual entre 1 y 99');
+            return;
+        }
+    }
     
     try {
         const response = await fetch('/api/estufa/guardar', {
@@ -120,6 +156,7 @@ async function enviarRegistro(event) {
                 longitud: longitud,
                 usa_estufa: usa_estufa,
                 frecuencia: frecuencia,
+                porcentaje_uso: porcentaje_uso,
                 comentario: comentario || ''
             })
         });

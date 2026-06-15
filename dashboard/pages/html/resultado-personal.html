@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Impacto Personal</title>
+    <title>Resultado de contaminación</title>
     <link rel="stylesheet" href="../../../css/dashboard.css">
     <link rel="stylesheet" href="../../../css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -11,30 +11,43 @@
 <body>
     <div class="result-container">
         <div class="result-card">
-            <h1>📊 Mi Impacto Personal</h1>
+            <h1>📊 Resultado de contaminación</h1>
             
             <div id="loadingMessage" class="loading">Cargando tus datos...</div>
             
             <div id="resultContent" style="display: none;">
-                <div class="impact-circle">
-                    <canvas id="impactChart" width="200" height="200"></canvas>
-                    <div class="impact-percentage" id="porcentajeTexto">0%</div>
+                <div id="sinEstufaMensaje" class="thanks-message" style="display: none;">
+                    <h2>¡Gracias por apoyar con los resultados!</h2>
+                    <p>Tu respuesta ayuda a conocer mejor la realidad de la comuna.</p>
                 </div>
-                
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <h3>🔥 Frecuencia de uso</h3>
-                        <p id="frecuenciaTexto">-</p>
+
+                <div id="usoEstufaContent">
+                    <div class="impact-circle">
+                        <canvas id="impactChart" width="200" height="200"></canvas>
+                        <div class="impact-percentage" id="porcentajeTexto">0%</div>
                     </div>
-                    <div class="stat-card">
-                        <h3>🌫️ Emisiones mensuales</h3>
-                        <p id="kgCO2Texto">0 kg CO2</p>
+
+                    <p class="impact-label">Porcentaje de contaminación al mes</p>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>🔥 Frecuencia de uso</h3>
+                            <p id="frecuenciaTexto">-</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>📅 Uso mensual estimado</h3>
+                            <p id="usoMensualTexto">0%</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Material particulado mensual</h3>
+                            <p id="materialParticuladoTexto">0 g MP2.5/mes</p>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="recomendaciones-section">
-                    <h3>💡 Recomendaciones para reducir tu impacto</h3>
-                    <ul id="recomendacionesLista"></ul>
+
+                    <div class="recomendaciones-section">
+                        <h3>💡 Maneras de evitar contaminar más</h3>
+                        <ul id="recomendacionesLista"></ul>
+                    </div>
                 </div>
                 
                 <div class="action-buttons">

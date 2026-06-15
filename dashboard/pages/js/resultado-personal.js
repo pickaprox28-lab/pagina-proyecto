@@ -25,9 +25,17 @@ function mostrarResultados(data) {
     document.getElementById('loadingMessage').style.display = 'none';
     document.getElementById('resultContent').style.display = 'block';
 
+    if (!tieneEstufa(data)) {
+        document.getElementById('sinEstufaMensaje').style.display = 'block';
+        document.getElementById('usoEstufaContent').style.display = 'none';
+        return;
+    }
+
+    document.getElementById('sinEstufaMensaje').style.display = 'none';
+    document.getElementById('usoEstufaContent').style.display = 'block';
     document.getElementById('frecuenciaTexto').textContent = capitalizar(data.frecuencia);
-    document.getElementById('kgCO2Texto').textContent = `${data.kgCO2} kg CO2`;
     document.getElementById('porcentajeTexto').textContent = `${data.porcentaje}%`;
+    document.getElementById('usoMensualTexto').textContent = `${data.porcentajeUso ?? data.porcentaje}%`;
 
     const lista = document.getElementById('recomendacionesLista');
     lista.innerHTML = '';
@@ -41,7 +49,7 @@ function mostrarResultados(data) {
     new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Tu nivel de contaminación', 'Nivel óptimo'],
+            labels: ['Contaminación mensual', 'Sin contaminación estimada'],
             datasets: [{
                 data: [data.porcentaje, 100 - data.porcentaje],
                 backgroundColor: ['#ff6b6b', '#4ecdc4'],
@@ -59,7 +67,23 @@ function mostrarResultados(data) {
     });
 }
 
+function tieneEstufa(data) {
+    const respuesta = normalizar(data.usa_estufa);
+    const frecuencia = normalizar(data.frecuencia);
+    return respuesta ? respuesta === 'si' && frecuencia !== 'no' : Boolean(frecuencia && frecuencia !== 'no');
+}
+
+function normalizar(str) {
+    return (str || '')
+        .toString()
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
+
 function capitalizar(str) {
+    if (!str) return '-';
     return str.split(' ').map(word => word[0].toUpperCase() + word.slice(1)).join(' ');
 }
 

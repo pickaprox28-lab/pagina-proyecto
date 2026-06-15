@@ -17,6 +17,8 @@ const ESTUFAS_CSV = path.join(DATA_DIR, 'datos_estufas.csv');
 const DIRECCIONES_CSV = path.join(DATA_DIR, 'direcciones.csv');
 const REPORTES_CSV = path.join(DATA_DIR, 'reportes.csv');
 const CALIDAD_AIRE_CSV = path.join(DATA_DIR, 'calidad_aire_mock.csv');
+const ESTUFAS_HEADERS = ['id', 'usuario_id', 'direccion', 'latitud', 'longitud', 'usa_estufa', 'frecuencia', 'porcentaje_uso', 'comentario', 'fecha_registro', 'año'];
+const MATERIAL_PARTICULADO_MAXIMO_MENSUAL_GR = 1200;
 
 // FUNCIONES
 
@@ -112,7 +114,7 @@ async function inicializarArchivos() {
     await leerCSV(USUARIOS_CSV, ['usuario', 'contraseña', 'email', 'nombre_completo']);
     
     // Datos estufas
-    await leerCSV(ESTUFAS_CSV, ['id', 'usuario_id', 'direccion', 'latitud', 'longitud', 'usa_estufa', 'frecuencia', 'comentario', 'fecha_registro', 'año']);
+    await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
     
     // Direcciones
     await leerCSV(DIRECCIONES_CSV, ['id', 'direccion', 'latitud', 'longitud', 'usuario_id', 'activo', 'fecha_asignacion']);
@@ -198,12 +200,18 @@ app.post('/api/register', async (req, res) => {
 // 1. Guardar datos de estufa
 app.post('/api/estufa/guardar', async (req, res) => {
     try {
-        const { usuario_id, direccion, latitud, longitud, usa_estufa, frecuencia, comentario } = req.body;
-        const datosEstufas = await leerCSV(ESTUFAS_CSV, []);
+        const { usuario_id, direccion, latitud, longitud, usa_estufa, frecuencia, porcentaje_uso, comentario } = req.body;
+        const datosEstufas = await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
         
         const nuevoId = datosEstufas.length + 1;
         const fecha = new Date().toISOString().split('T')[0];
         const año = new Date().getFullYear();
+        const frecuenciaGuardada = normalizarFrecuencia(frecuencia) === 'solo cuando hace frio' ? 'a veces' : frecuencia;
+        const porcentajeUso = normalizarPorcentajeUso(frecuenciaGuardada, porcentaje_uso);
+
+        if (normalizarFrecuencia(usa_estufa) === 'si' && normalizarFrecuencia(frecuenciaGuardada) === 'a veces' && porcentajeUso === null) {
+            return res.status(400).json({ success: false, message: 'Ingresa un porcentaje de uso mensual válido' });
+        }
         
         const nuevoRegistro = {
             id: nuevoId,
@@ -212,14 +220,15 @@ app.post('/api/estufa/guardar', async (req, res) => {
             latitud,
             longitud,
             usa_estufa,
-            frecuencia,
+            frecuencia: normalizarFrecuencia(usa_estufa) === 'no' ? 'no' : frecuenciaGuardada,
+            porcentaje_uso: porcentajeUso ?? '',
             comentario: comentario || '',
             fecha_registro: fecha,
             año
         };
         
         datosEstufas.push(nuevoRegistro);
-        await escribirCSV(ESTUFAS_CSV, datosEstufas, ['id', 'usuario_id', 'direccion', 'latitud', 'longitud', 'usa_estufa', 'frecuencia', 'comentario', 'fecha_registro', 'año']);
+        await escribirCSV(ESTUFAS_CSV, datosEstufas, ESTUFAS_HEADERS);
         
         // Guardar dirección
         const direcciones = await leerCSV(DIRECCIONES_CSV, []);
@@ -249,7 +258,7 @@ app.post('/api/estufa/guardar', async (req, res) => {
 app.get('/api/estufa/usuario/:usuarioId', async (req, res) => {
     try {
         const { usuarioId } = req.params;
-        const datosEstufas = await leerCSV(ESTUFAS_CSV, []);
+        const datosEstufas = await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
         const añoActual = new Date().getFullYear();
         
         const datosUsuario = datosEstufas.find(d => d.usuario_id === usuarioId && d.año == añoActual);
@@ -268,7 +277,7 @@ app.get('/api/estufa/usuario/:usuarioId', async (req, res) => {
 app.get('/api/resultado/personal/:usuarioId', async (req, res) => {
     try {
         const { usuarioId } = req.params;
-        const datosEstufas = await leerCSV(ESTUFAS_CSV, []);
+        const datosEstufas = await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
         const añoActual = new Date().getFullYear();
         
         const datosUsuario = datosEstufas.find(d => d.usuario_id === usuarioId && d.año == añoActual);
@@ -277,15 +286,25 @@ app.get('/api/resultado/personal/:usuarioId', async (req, res) => {
             return res.json({ success: false, message: 'No hay datos para este usuario' });
         }
         
-        const contaminacion = calcularContaminacionPersonal(datosUsuario.frecuencia);
-        const recomendaciones = obtenerRecomendaciones(datosUsuario.frecuencia);
+        const frecuenciaEfectiva = obtenerFrecuenciaEfectiva(datosUsuario);
+        const porcentajeUso = obtenerPorcentajeUso(datosUsuario, frecuenciaEfectiva);
+        const contaminacion = calcularContaminacionPersonal(frecuenciaEfectiva, porcentajeUso);
+        const frecuenciaVisible = obtenerFrecuenciaVisible(frecuenciaEfectiva);
+        const recomendaciones = obtenerRecomendaciones(frecuenciaVisible);
+        const usaEstufa = normalizarFrecuencia(frecuenciaEfectiva) === 'no' ? 'no' : 'si';
         
         res.json({
             success: true,
             data: {
-                frecuencia: datosUsuario.frecuencia,
+                usa_estufa: usaEstufa,
+                frecuencia: frecuenciaVisible,
                 kgCO2: contaminacion.kgCO2,
                 porcentaje: contaminacion.porcentaje,
+                porcentajeUso: porcentajeUso,
+                contaminanteParticulado: contaminacion.contaminanteParticulado,
+                materialParticuladoGramos: contaminacion.materialParticuladoGramos,
+                materialParticuladoTexto: contaminacion.materialParticuladoTexto,
+                mensaje: contaminacion.porcentaje === 0 ? '¡Gracias por apoyar con los resultados!' : '',
                 recomendaciones
             }
         });
@@ -294,15 +313,76 @@ app.get('/api/resultado/personal/:usuarioId', async (req, res) => {
     }
 });
 
-function calcularContaminacionPersonal(frecuencia) {
-    const valores = {
-        "si": { kgCO2: 120, porcentaje: 100 },
-        "todos los dias": { kgCO2: 120, porcentaje: 100 },
-        "a veces": { kgCO2: 60, porcentaje: 50 },
-        "solo cuando hace frío": { kgCO2: 40, porcentaje: 33 },
-        "no": { kgCO2: 0, porcentaje: 0 }
+function normalizarFrecuencia(frecuencia) {
+    return (frecuencia || '')
+        .toString()
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
+
+function obtenerFrecuenciaEfectiva(registro) {
+    const usaEstufa = normalizarFrecuencia(registro?.usa_estufa);
+
+    if (usaEstufa === 'no') {
+        return 'no';
+    }
+
+    return registro?.frecuencia || (usaEstufa === 'si' ? 'si' : 'no');
+}
+
+function normalizarPorcentajeUso(frecuencia, porcentajeUso) {
+    const frecuenciaNormalizada = normalizarFrecuencia(frecuencia);
+
+    if (frecuenciaNormalizada === 'no') return 0;
+    if (frecuenciaNormalizada === 'si' || frecuenciaNormalizada === 'todos los dias') return 100;
+
+    if (frecuenciaNormalizada === 'a veces') {
+        const porcentaje = Number(porcentajeUso);
+        if (!Number.isFinite(porcentaje) || porcentaje < 1 || porcentaje > 99) return null;
+        return Math.round(porcentaje);
+    }
+
+    return 0;
+}
+
+function obtenerPorcentajeUso(registro, frecuencia) {
+    const frecuenciaNormalizada = normalizarFrecuencia(frecuencia);
+
+    if (frecuenciaNormalizada === 'solo cuando hace frio') {
+        const porcentaje = Number(registro?.porcentaje_uso);
+        return Number.isFinite(porcentaje) && porcentaje >= 1 && porcentaje <= 99 ? Math.round(porcentaje) : 33;
+    }
+
+    if (frecuenciaNormalizada === 'a veces') {
+        const porcentaje = Number(registro?.porcentaje_uso);
+        return Number.isFinite(porcentaje) && porcentaje >= 1 && porcentaje <= 99 ? Math.round(porcentaje) : 50;
+    }
+
+    return normalizarPorcentajeUso(frecuencia, registro?.porcentaje_uso) ?? 0;
+}
+
+function obtenerFrecuenciaVisible(frecuencia) {
+    return normalizarFrecuencia(frecuencia) === 'solo cuando hace frio' ? 'a veces' : frecuencia;
+}
+
+function calcularContaminacionPersonal(frecuencia, porcentajeUso) {
+    const porcentaje = obtenerPorcentajeUso({ porcentaje_uso: porcentajeUso }, frecuencia);
+    const materialParticuladoGramos = redondear(MATERIAL_PARTICULADO_MAXIMO_MENSUAL_GR * (porcentaje / 100), 1);
+
+    return {
+        kgCO2: redondear(120 * (porcentaje / 100), 1),
+        porcentaje,
+        contaminanteParticulado: 'MP2.5',
+        materialParticuladoGramos,
+        materialParticuladoTexto: `${materialParticuladoGramos} g MP2.5/mes`
     };
-    return valores[frecuencia?.toLowerCase()] || valores["no"];
+}
+
+function redondear(valor, decimales = 0) {
+    const factor = 10 ** decimales;
+    return Math.round(valor * factor) / factor;
 }
 
 function obtenerRecomendaciones(frecuencia) {
@@ -310,16 +390,15 @@ function obtenerRecomendaciones(frecuencia) {
         "si": ["Reduce el uso a días específicos", "Usa leña seca (menos humo)", "Mantén la estufa bien regulada"],
         "todos los dias": ["Reduce el uso a días específicos", "Usa leña seca (menos humo)", "Mantén la estufa bien regulada"],
         "a veces": ["Buen trabajo reduciendo el uso", "Considera alternativas como estufa a pellet", "Ventila bien los espacios"],
-        "solo cuando hace frío": ["Excelente control de uso", "Aísla mejor tu casa para menos frío", "Comparte tus hábitos con vecinos"],
         "no": ["Excelente! No generas contaminación por estufa", "Eres un ejemplo para la comunidad"]
     };
-    return recomendacionesMap[frecuencia?.toLowerCase()] || ["Sigue así!"];
+    return recomendacionesMap[normalizarFrecuencia(frecuencia)] || ["Sigue así!"];
 }
 
 // 4. Obtener resultado comunal
 app.get('/api/resultado/comunal', async (req, res) => {
     try {
-        const datosEstufas = await leerCSV(ESTUFAS_CSV, []);
+        const datosEstufas = await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
         const calidadAire = await leerCSV(CALIDAD_AIRE_CSV, []);
         const añoActual = new Date().getFullYear();
         
@@ -328,17 +407,22 @@ app.get('/api/resultado/comunal', async (req, res) => {
         
         // Calcular frecuencias
         const frecuencias = {
-            "todos los dias": datosAñoActual.filter(d => d.frecuencia === "todos los dias" || d.frecuencia === "si").length,
-            "a veces": datosAñoActual.filter(d => d.frecuencia === "a veces").length,
-            "solo cuando hace frío": datosAñoActual.filter(d => d.frecuencia === "solo cuando hace frío").length,
-            "no": datosAñoActual.filter(d => d.frecuencia === "no").length
+            "todos los dias": datosAñoActual.filter(d => {
+                const frecuencia = normalizarFrecuencia(obtenerFrecuenciaVisible(obtenerFrecuenciaEfectiva(d)));
+                return frecuencia === "todos los dias" || frecuencia === "si";
+            }).length,
+            "a veces": datosAñoActual.filter(d => normalizarFrecuencia(obtenerFrecuenciaVisible(obtenerFrecuenciaEfectiva(d))) === "a veces").length,
+            "no": datosAñoActual.filter(d => normalizarFrecuencia(obtenerFrecuenciaEfectiva(d)) === "no").length
         };
         
         // Calcular contaminación total estimada
         let contaminacionTotal = 0;
+        let materialParticuladoTotal = 0;
         for (const dato of datosAñoActual) {
-            const cont = calcularContaminacionPersonal(dato.frecuencia);
+            const frecuenciaEfectiva = obtenerFrecuenciaEfectiva(dato);
+            const cont = calcularContaminacionPersonal(frecuenciaEfectiva, obtenerPorcentajeUso(dato, frecuenciaEfectiva));
             contaminacionTotal += cont.kgCO2;
+            materialParticuladoTotal += cont.materialParticuladoGramos;
         }
         
         res.json({
@@ -348,6 +432,7 @@ app.get('/api/resultado/comunal', async (req, res) => {
                 chimeneas_activas_estimadas: chimeneasActivas,
                 frecuencias,
                 contaminacion_total_estimada: contaminacionTotal,
+                material_particulado_total_estimado: redondear(materialParticuladoTotal, 1),
                 calidad_aire_reciente: calidadAire.slice(-7),
                 año: añoActual
             }
@@ -359,21 +444,14 @@ app.get('/api/resultado/comunal', async (req, res) => {
 });
 
 async function calcularChimeneasActivas() {
-    const datosEstufas = await leerCSV(ESTUFAS_CSV, []);
+    const datosEstufas = await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
     const añoActual = new Date().getFullYear();
     const datosAñoActual = datosEstufas.filter(d => d.año == añoActual);
     
-    const frecuencias = {
-        "todos los dias": 1.0,
-        "si": 1.0,
-        "a veces": 0.5,
-        "solo cuando hace frío": 0.33,
-        "no": 0
-    };
-    
     let totalFactor = 0;
     for (const dato of datosAñoActual) {
-        totalFactor += frecuencias[dato.frecuencia?.toLowerCase()] || 0;
+        const frecuenciaEfectiva = obtenerFrecuenciaEfectiva(dato);
+        totalFactor += obtenerPorcentajeUso(dato, frecuenciaEfectiva) / 100;
     }
     
     return Math.round(totalFactor);
@@ -407,7 +485,7 @@ app.post('/api/reportar/direccion', async (req, res) => {
 app.get('/api/reinicio/verificar/:usuarioId', async (req, res) => {
     try {
         const { usuarioId } = req.params;
-        const datosEstufas = await leerCSV(ESTUFAS_CSV, []);
+        const datosEstufas = await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
         const añoActual = new Date().getFullYear();
         
         const registroActual = datosEstufas.find(d => d.usuario_id === usuarioId && d.año == añoActual);
@@ -438,7 +516,7 @@ app.get('/api/captcha/obtener', (req, res) => {
 
 app.get('/api/debug/estufas', async (req, res) => {
     try {
-        const datos = await leerCSV(ESTUFAS_CSV, ['id','usuario_id','direccion','latitud','longitud','usa_estufa','frecuencia','comentario','fecha_registro','año']);
+        const datos = await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
         res.json({ success: true, count: datos.length, data: datos });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
@@ -482,20 +560,21 @@ app.post('/api/debug/repair-estufas', async (req, res) => {
                 const latitud = parts[latIdx] || '';
                 const longitud = parts[latIdx+1] || '';
                 const rest = parts.slice(latIdx+2);
-                // usa_estufa,frecuencia,comentario,fecha_registro,año
                 const usa_estufa = rest[0] || '';
-                const frecuencia = rest[1] || '';
-                const comentario = rest[2] || '';
-                const fecha_registro = rest[3] || '';
-                const año = rest[4] || '';
+                const frecuencia = normalizarFrecuencia(rest[1]) === 'solo cuando hace frio' ? 'a veces' : (rest[1] || '');
+                const tienePorcentaje = /^\d{1,3}$/.test(rest[2] || '') && /^\d{4}-\d{2}-\d{2}$/.test(rest[4] || '');
+                const porcentaje_uso = tienePorcentaje ? rest[2] : '';
+                const comentario = tienePorcentaje ? (rest[3] || '') : (rest[2] || '');
+                const fecha_registro = tienePorcentaje ? (rest[4] || '') : (rest[3] || '');
+                const año = tienePorcentaje ? (rest[5] || '') : (rest[4] || '');
 
-                repaired.push({ id, usuario_id, direccion, latitud, longitud, usa_estufa, frecuencia, comentario, fecha_registro, año });
+                repaired.push({ id, usuario_id, direccion, latitud, longitud, usa_estufa, frecuencia, porcentaje_uso, comentario, fecha_registro, año });
             } else {
             }
         }
 
         if (repaired.length > 0) {
-            await escribirCSV(ESTUFAS_CSV, repaired, ['id','usuario_id','direccion','latitud','longitud','usa_estufa','frecuencia','comentario','fecha_registro','año']);
+            await escribirCSV(ESTUFAS_CSV, repaired, ESTUFAS_HEADERS);
         }
 
         res.json({ success: true, repaired: repaired.length });

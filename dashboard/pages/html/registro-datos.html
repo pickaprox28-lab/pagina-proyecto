@@ -34,7 +34,7 @@
                 <div class="form-section">
                     <h3>🔥 Uso de estufa a leña</h3>
                     <div class="question">
-                        <label>¿Usas estufa a leña?</label>
+                        <label>¿Tienes estufa a leña?</label>
                         <div class="radio-group">
                             <label><input type="radio" name="usa_estufa" value="si" required> Sí</label>
                             <label><input type="radio" name="usa_estufa" value="no"> No</label>
@@ -47,8 +47,12 @@
                             <div class="radio-group">
                                 <label><input type="radio" name="frecuencia" value="todos los dias"> Todos los días</label>
                                 <label><input type="radio" name="frecuencia" value="a veces"> A veces</label>
-                                <label><input type="radio" name="frecuencia" value="solo cuando hace frío"> Solo cuando hace frío</label>
                             </div>
+                        </div>
+
+                        <div id="porcentajeUsoSection" class="input-group" style="display: none;">
+                            <label for="porcentajeUso">Porcentaje de uso mensual:</label>
+                            <input type="number" id="porcentajeUso" min="1" max="99" step="1" placeholder="Ej: 30">
                         </div>
                         
                         <div class="question">

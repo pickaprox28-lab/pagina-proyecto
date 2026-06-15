@@ -214,6 +214,45 @@
   pointer-events: none;
 }
 
+.impact-label,
+.thanks-message,
+.single-result {
+  text-align: center;
+}
+
+.impact-label {
+  margin: -4px 0 20px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.thanks-message {
+  padding: 24px 0 8px;
+}
+
+.thanks-message h2,
+.single-result h2 {
+  margin: 0 0 12px;
+  font-size: clamp(1.4rem, 2.6vw, 2rem);
+}
+
+.thanks-message p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.single-result {
+  padding: 24px 0;
+}
+
+.result-percentage {
+  margin: 8px 0;
+  color: var(--primary);
+  font-size: clamp(3.4rem, 12vw, 6rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
 .stat-card,
 .chart-container,
 .calidad-aire-section {
