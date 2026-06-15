@@ -56,7 +56,7 @@ async function leerCSV(filePath, encabezados) {
                         for (let j = 5; j < headers.length && restStart < valores.length; j++, restStart++) {
                             obj[headers[j]] = valores[restStart] || '';
                         }
-                    } else 
+                    } else {
                         for (let j = 0; j < Math.min(headers.length, valores.length); j++) obj[headers[j]] = valores[j];
                     }
                 } else {
@@ -67,7 +67,6 @@ async function leerCSV(filePath, encabezados) {
         }
         return resultados;
     } catch (error) {
-        // Crear archivo con encabezados si no existe
         await fs.writeFile(filePath, encabezados.join(',') + '\n');
         return [];
     }
