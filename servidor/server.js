@@ -2,9 +2,13 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs').promises;
 const path = require('path');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const PASSWORD_SALT_ROUNDS = 10;
+const USUARIOS_HEADERS = ['usuario', 'contraseña', 'email', 'nombre_completo'];
+const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY || '';
 
 app.use(cors());
 app.use(express.json());
@@ -105,6 +109,54 @@ function parseCSVLine(line) {
     return result.map(r => r.replace(/^"|"$/g, ''));
 }
 
+function obtenerPasswordUsuario(usuario) {
+    return usuario?.[USUARIOS_HEADERS[1]] || '';
+}
+
+function asignarPasswordUsuario(usuario, passwordHash) {
+    usuario[USUARIOS_HEADERS[1]] = passwordHash;
+}
+
+function esHashBcrypt(password) {
+    return /^\$2[aby]\$\d{2}\$/.test(password || '');
+}
+
+async function validarPassword(usuario, password) {
+    const passwordGuardada = obtenerPasswordUsuario(usuario);
+    if (!passwordGuardada) return false;
+
+    if (esHashBcrypt(passwordGuardada)) {
+        return bcrypt.compare(password, passwordGuardada);
+    }
+
+    return passwordGuardada === password;
+}
+
+async function verificarRecaptcha(recaptchaToken) {
+    if (!RECAPTCHA_SECRET_KEY) {
+        console.error('Falta configurar RECAPTCHA_SECRET_KEY');
+        return false;
+    }
+
+    if (!recaptchaToken) return false;
+
+    const params = new URLSearchParams({
+        secret: RECAPTCHA_SECRET_KEY,
+        response: recaptchaToken
+    });
+
+    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params
+    });
+
+    if (!response.ok) return false;
+
+    const data = await response.json();
+    return data.success === true;
+}
+
 // INICIALIZAR ARCHIVOS CSV
 
 async function inicializarArchivos() {
@@ -112,7 +164,7 @@ async function inicializarArchivos() {
     await fs.mkdir(DATA_DIR, { recursive: true });
     
     // Usuarios
-    await leerCSV(USUARIOS_CSV, ['usuario', 'contraseña', 'email', 'nombre_completo']);
+    await leerCSV(USUARIOS_CSV, USUARIOS_HEADERS);
     
     // Datos estufas
     await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
@@ -134,17 +186,26 @@ async function inicializarArchivos() {
 // Login
 app.post('/api/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, recaptchaToken } = req.body;
         console.log(`Intento de login: ${email}`);
+
+        if (!(await verificarRecaptcha(recaptchaToken))) {
+            return res.json({ success: false, message: 'Verifica el captcha para continuar' });
+        }
         
-        const usuarios = await leerCSV(USUARIOS_CSV, ['usuario', 'contraseña', 'email', 'nombre_completo']);
+        const usuarios = await leerCSV(USUARIOS_CSV, USUARIOS_HEADERS);
         console.log(`Usuarios cargados: ${usuarios.length}`);
         
-        const user = usuarios.find(u => u.email === email && u['contraseña'] === password);
+        const user = usuarios.find(u => u.email === email);
         
-        if (!user) {
+        if (!user || !(await validarPassword(user, password))) {
             console.log(`Login fallido para: ${email}`);
             return res.json({ success: false, message: 'Credenciales inválidas' });
+        }
+
+        if (!esHashBcrypt(obtenerPasswordUsuario(user))) {
+            asignarPasswordUsuario(user, await bcrypt.hash(password, PASSWORD_SALT_ROUNDS));
+            await escribirCSV(USUARIOS_CSV, usuarios, USUARIOS_HEADERS);
         }
         
         console.log(`Login exitoso: ${user.usuario}`);
@@ -165,10 +226,14 @@ app.post('/api/login', async (req, res) => {
 // Registro
 app.post('/api/register', async (req, res) => {
     try {
-        const { nombre, usuario, email, password } = req.body;
+        const { nombre, usuario, email, password, recaptchaToken } = req.body;
         console.log(`Intento de registro: ${usuario} - ${email}`);
+
+        if (!(await verificarRecaptcha(recaptchaToken))) {
+            return res.json({ success: false, message: 'Verifica el captcha para continuar' });
+        }
         
-        const usuarios = await leerCSV(USUARIOS_CSV, ['usuario', 'contraseña', 'email', 'nombre_completo']);
+        const usuarios = await leerCSV(USUARIOS_CSV, USUARIOS_HEADERS);
 
         // Validar existencia
         if (usuarios.find(u => u.usuario === usuario)) {
@@ -180,13 +245,13 @@ app.post('/api/register', async (req, res) => {
 
         const nuevo = {
             usuario: usuario,
-            'contraseña': password,
+            [USUARIOS_HEADERS[1]]: await bcrypt.hash(password, PASSWORD_SALT_ROUNDS),
             email: email,
             nombre_completo: nombre
         };
 
         usuarios.push(nuevo);
-        await escribirCSV(USUARIOS_CSV, usuarios, ['usuario', 'contraseña', 'email', 'nombre_completo']);
+        await escribirCSV(USUARIOS_CSV, usuarios, USUARIOS_HEADERS);
 
         console.log(`Registro exitoso: ${usuario}`);
         res.json({ success: true, message: 'Registro exitoso' });
@@ -260,7 +325,7 @@ app.get('/api/estufa/usuario/:usuarioId', async (req, res) => {
     try {
         const { usuarioId } = req.params;
         const datosEstufas = await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
-        const usuarios = await leerCSV(USUARIOS_CSV, ['usuario', 'contraseña', 'email', 'nombre_completo']);
+        const usuarios = await leerCSV(USUARIOS_CSV, USUARIOS_HEADERS);
         const anioActual = new Date().getFullYear();
         
         const datosUsuario = obtenerRegistroUsuarioAnio(datosEstufas, usuarioId, usuarios, anioActual);
@@ -280,7 +345,7 @@ app.get('/api/resultado/personal/:usuarioId', async (req, res) => {
     try {
         const { usuarioId } = req.params;
         const datosEstufas = await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
-        const usuarios = await leerCSV(USUARIOS_CSV, ['usuario', 'contraseña', 'email', 'nombre_completo']);
+        const usuarios = await leerCSV(USUARIOS_CSV, USUARIOS_HEADERS);
         const anioActual = new Date().getFullYear();
         
         const datosUsuario = obtenerRegistroUsuarioAnio(datosEstufas, usuarioId, usuarios, anioActual);
@@ -336,7 +401,7 @@ app.post('/api/resultado/personal/:usuarioId/reiniciar', async (req, res) => {
 
 async function reiniciarResultadoPersonal(usuarioId) {
     const datosEstufas = await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
-    const usuarios = await leerCSV(USUARIOS_CSV, ['usuario', 'contraseña', 'email', 'nombre_completo']);
+    const usuarios = await leerCSV(USUARIOS_CSV, USUARIOS_HEADERS);
     const anioActual = String(new Date().getFullYear());
     const idsUsuario = obtenerIdentificadoresUsuario(usuarioId, usuarios);
     const datosActualizados = datosEstufas.filter(d => {
@@ -596,7 +661,7 @@ app.get('/api/reinicio/verificar/:usuarioId', async (req, res) => {
     try {
         const { usuarioId } = req.params;
         const datosEstufas = await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
-        const usuarios = await leerCSV(USUARIOS_CSV, ['usuario', 'contraseña', 'email', 'nombre_completo']);
+        const usuarios = await leerCSV(USUARIOS_CSV, USUARIOS_HEADERS);
         const anioActual = new Date().getFullYear();
         
         const registroActual = obtenerRegistroUsuarioAnio(datosEstufas, usuarioId, usuarios, anioActual);

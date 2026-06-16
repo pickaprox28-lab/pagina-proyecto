@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('confirmPassword').value;
+        const recaptchaToken = obtenerRecaptchaToken();
 
         mensajeExito.style.display = 'none';
         mensajeError.style.display = 'none';
@@ -37,15 +38,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (password !== confirmPassword) {
-            mostrarError('Las contraseñas no coinciden');
+            mostrarError('Las contrasenas no coinciden');
             return;
         }
 
         if (password.length < 4) {
-            mostrarError('La contraseña debe tener al menos 4 caracteres');
+            mostrarError('La contrasena debe tener al menos 4 caracteres');
             return;
         }
 
+        if (!recaptchaToken) {
+            mostrarError('Completa el captcha antes de registrarte.');
+            return;
+        }
 
         submitBtn.disabled = true;
         submitBtn.textContent = 'Registrando...';
@@ -56,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ nombre, usuario, email, password })
+                body: JSON.stringify({ nombre, usuario, email, password, recaptchaToken })
             });
 
             const data = await response.json();
@@ -65,20 +70,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 mostrarExitoYRedirigir();
             } else {
                 mostrarError(data.message || 'No se pudo registrar el usuario.');
-                
             }
         } catch (error) {
             console.error('Error:', error);
-            mostrarError('Error de conexión con el servidor. Abre la app desde http://localhost:3000');
+            mostrarError('Error de conexion con el servidor. Abre la app desde http://localhost:3000');
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = 'Registrarse';
         }
     });
 
+    function obtenerRecaptchaToken() {
+        if (typeof grecaptcha === 'undefined') return '';
+        return grecaptcha.getResponse();
+    }
+
+    function reiniciarRecaptcha() {
+        if (typeof grecaptcha !== 'undefined') {
+            grecaptcha.reset();
+        }
+    }
+
     function mostrarError(mensaje) {
         mensajeError.textContent = mensaje;
         mensajeError.style.display = 'block';
+        reiniciarRecaptcha();
 
         setTimeout(() => {
             mensajeError.style.display = 'none';
@@ -94,4 +110,3 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1200);
     }
 });
-
