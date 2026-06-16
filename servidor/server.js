@@ -260,9 +260,10 @@ app.get('/api/estufa/usuario/:usuarioId', async (req, res) => {
     try {
         const { usuarioId } = req.params;
         const datosEstufas = await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
-        const añoActual = new Date().getFullYear();
+        const usuarios = await leerCSV(USUARIOS_CSV, ['usuario', 'contraseña', 'email', 'nombre_completo']);
+        const anioActual = new Date().getFullYear();
         
-        const datosUsuario = datosEstufas.find(d => d.usuario_id === usuarioId && d.año == añoActual);
+        const datosUsuario = obtenerRegistroUsuarioAnio(datosEstufas, usuarioId, usuarios, anioActual);
         
         if (datosUsuario) {
             res.json({ success: true, data: datosUsuario });
@@ -279,9 +280,10 @@ app.get('/api/resultado/personal/:usuarioId', async (req, res) => {
     try {
         const { usuarioId } = req.params;
         const datosEstufas = await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
-        const añoActual = new Date().getFullYear();
+        const usuarios = await leerCSV(USUARIOS_CSV, ['usuario', 'contraseña', 'email', 'nombre_completo']);
+        const anioActual = new Date().getFullYear();
         
-        const datosUsuario = datosEstufas.find(d => d.usuario_id === usuarioId && d.año == añoActual);
+        const datosUsuario = obtenerRegistroUsuarioAnio(datosEstufas, usuarioId, usuarios, anioActual);
         
         if (!datosUsuario) {
             return res.json({ success: false, message: 'No hay datos para este usuario' });
@@ -338,8 +340,7 @@ async function reiniciarResultadoPersonal(usuarioId) {
     const anioActual = String(new Date().getFullYear());
     const idsUsuario = obtenerIdentificadoresUsuario(usuarioId, usuarios);
     const datosActualizados = datosEstufas.filter(d => {
-        const anioRegistro = String(obtenerAnioRegistro(d));
-        return !(idsUsuario.has(d.usuario_id) && anioRegistro === anioActual);
+        return !(coincideUsuarioRegistro(d, idsUsuario) && coincideAnioRegistro(d, anioActual));
     });
     const eliminados = datosEstufas.length - datosActualizados.length;
 
@@ -352,15 +353,45 @@ async function reiniciarResultadoPersonal(usuarioId) {
 }
 
 function obtenerIdentificadoresUsuario(usuarioId, usuarios) {
-    const ids = new Set([usuarioId]);
-    const usuario = usuarios.find(u => u.usuario === usuarioId || u.email === usuarioId);
+    const ids = new Set();
+    agregarIdentificadorUsuario(ids, usuarioId);
+
+    const usuarioBuscado = normalizarIdentificador(usuarioId);
+    const usuario = usuarios.find(u => {
+        return normalizarIdentificador(u.usuario) === usuarioBuscado
+            || normalizarIdentificador(u.email) === usuarioBuscado;
+    });
 
     if (usuario) {
-        ids.add(usuario.usuario);
-        ids.add(usuario.email);
+        agregarIdentificadorUsuario(ids, usuario.usuario);
+        agregarIdentificadorUsuario(ids, usuario.email);
     }
 
     return ids;
+}
+
+function obtenerRegistroUsuarioAnio(datosEstufas, usuarioId, usuarios, anio) {
+    const idsUsuario = obtenerIdentificadoresUsuario(usuarioId, usuarios);
+    return [...datosEstufas]
+        .reverse()
+        .find(d => coincideUsuarioRegistro(d, idsUsuario) && coincideAnioRegistro(d, anio));
+}
+
+function coincideUsuarioRegistro(registro, idsUsuario) {
+    return idsUsuario.has(normalizarIdentificador(registro?.usuario_id));
+}
+
+function coincideAnioRegistro(registro, anio) {
+    return String(obtenerAnioRegistro(registro)).trim() === String(anio).trim();
+}
+
+function agregarIdentificadorUsuario(ids, valor) {
+    const identificador = normalizarIdentificador(valor);
+    if (identificador) ids.add(identificador);
+}
+
+function normalizarIdentificador(valor) {
+    return (valor || '').toString().trim().toLowerCase();
 }
 
 function normalizarFrecuencia(frecuencia) {
@@ -565,13 +596,14 @@ app.get('/api/reinicio/verificar/:usuarioId', async (req, res) => {
     try {
         const { usuarioId } = req.params;
         const datosEstufas = await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
-        const añoActual = new Date().getFullYear();
+        const usuarios = await leerCSV(USUARIOS_CSV, ['usuario', 'contraseña', 'email', 'nombre_completo']);
+        const anioActual = new Date().getFullYear();
         
-        const registroActual = datosEstufas.find(d => d.usuario_id === usuarioId && d.año == añoActual);
+        const registroActual = obtenerRegistroUsuarioAnio(datosEstufas, usuarioId, usuarios, anioActual);
         
         res.json({
             yaRegistro: !!registroActual,
-            año: añoActual,
+            año: anioActual,
             datos: registroActual || null
         });
     } catch (error) {
