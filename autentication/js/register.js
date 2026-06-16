@@ -52,6 +52,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        console.log("Token CAPTCHA:", recaptchaToken);
+        console.log("Longitud token:", recaptchaToken.length);
+
         submitBtn.disabled = true;
         submitBtn.textContent = 'Registrando...';
 
