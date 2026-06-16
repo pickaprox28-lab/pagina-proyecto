@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 3000;
 const PASSWORD_SALT_ROUNDS = 10;
 const USUARIOS_HEADERS = ['usuario', 'contraseña', 'email', 'nombre_completo'];
 const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY || process.env.RECAPTCHA_SECRET || '';
+const RECAPTCHA_SITE_KEY = process.env.RECAPTCHA_SITE_KEY || '6Ldxev8sAAAAAKLjNqd3kQQS776nvI_kLnOJAXVZ';
 const RECAPTCHA_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify';
 
 app.use(cors());
@@ -17,6 +18,10 @@ app.use(express.static(path.join(__dirname, '..')));
 
 if (!RECAPTCHA_SECRET_KEY) {
     console.warn('Advertencia: RECAPTCHA_SECRET_KEY no esta configurada; login y registro rechazaran el captcha.');
+}
+
+if (!process.env.RECAPTCHA_SITE_KEY) {
+    console.warn('Advertencia: RECAPTCHA_SITE_KEY no esta configurada; si cambiaste la clave secreta, configura tambien la clave publica para evitar invalid-input-response.');
 }
 
 // Rutas a archivos CSV
@@ -172,7 +177,8 @@ async function verificarRecaptcha(recaptchaToken) {
         if (data.success !== true) {
             console.warn('reCAPTCHA rechazado:', {
                 hostname: data.hostname,
-                errorCodes: data['error-codes']
+                errorCodes: data['error-codes'],
+                tokenLength: recaptchaToken.length
             });
             return false;
         }
@@ -209,6 +215,10 @@ async function inicializarArchivos() {
 // ENDPOINTS API
 
 // LOGIN Y REGISTRO
+
+app.get('/api/recaptcha/site-key', (req, res) => {
+    res.json({ success: true, siteKey: RECAPTCHA_SITE_KEY });
+});
 
 // Login
 app.post('/api/login', async (req, res) => {

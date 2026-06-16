@@ -67,11 +67,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function obtenerRecaptchaToken() {
+        if (window.recaptchaHelper) return window.recaptchaHelper.getToken();
         if (typeof grecaptcha === 'undefined') return '';
         return grecaptcha.getResponse();
     }
 
     function reiniciarRecaptcha() {
+        if (window.recaptchaHelper) {
+            window.recaptchaHelper.reset();
+            return;
+        }
+
         if (typeof grecaptcha !== 'undefined') {
             grecaptcha.reset();
         }

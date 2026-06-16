@@ -52,9 +52,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        console.log("Token CAPTCHA:", recaptchaToken);
-        console.log("Longitud token:", recaptchaToken.length);
-
         submitBtn.disabled = true;
         submitBtn.textContent = 'Registrando...';
 
@@ -84,11 +81,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function obtenerRecaptchaToken() {
+        if (window.recaptchaHelper) return window.recaptchaHelper.getToken();
         if (typeof grecaptcha === 'undefined') return '';
         return grecaptcha.getResponse();
     }
 
     function reiniciarRecaptcha() {
+        if (window.recaptchaHelper) {
+            window.recaptchaHelper.reset();
+            return;
+        }
+
         if (typeof grecaptcha !== 'undefined') {
             grecaptcha.reset();
         }

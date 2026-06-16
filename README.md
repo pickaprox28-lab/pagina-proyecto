@@ -43,11 +43,16 @@ Accede a: http://localhost:3000/dashboard/dashboard.html
 
 ## Configurar reCAPTCHA en Render
 
-En Render agrega una variable de entorno llamada `RECAPTCHA_SECRET_KEY` con la clave secreta de Google reCAPTCHA. No la pegues en el código ni en archivos del proyecto.
+En Render agrega estas variables de entorno con las claves del mismo registro de Google reCAPTCHA:
+
+- `RECAPTCHA_SITE_KEY`: clave del sitio, publica.
+- `RECAPTCHA_SECRET_KEY`: clave secreta.
+
+No pegues la clave secreta en el código ni en archivos del proyecto.
 
 En Google reCAPTCHA revisa que el dominio autorizado sea el dominio real de Render, por ejemplo `tu-servicio.onrender.com`, sin `https://` y sin rutas. Para probar localmente, agrega también `localhost`.
 
-La clave del sitio es pública y está en `autentication/login.html` y `autentication/register.html`.
+Si regeneras las claves en Google, actualiza ambas variables en Render y reinicia el servicio.
 
 ## Abrir la aplicación
 

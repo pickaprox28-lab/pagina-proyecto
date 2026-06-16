@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Registro</title>
   <link rel="stylesheet" href="register.css">
-  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <script src="js/recaptcha.js"></script>
+  <script src="https://www.google.com/recaptcha/api.js?onload=renderRecaptcha&render=explicit" async defer></script>
 </head>
 <body>
 
@@ -65,7 +66,7 @@
         </button>
       </div>
 
-      <div class="g-recaptcha" data-sitekey="6Ldxev8sAAAAAKLjNqd3kQQS776nvI_kLnOJAXVZ"></div>
+      <div class="g-recaptcha"></div>
 
       <button type="submit">Registrarse</button>
 
