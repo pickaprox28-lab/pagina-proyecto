@@ -1,9 +1,16 @@
+const MATERIAL_PARTICULADO_MAXIMO_MENSUAL_GR = 1200;
+
 document.addEventListener('DOMContentLoaded', async function() {
     const usuarioId = localStorage.getItem('usuarioActual');
 
     if (!usuarioId) {
         window.location.href = '/autentication/login.html';
         return;
+    }
+
+    const reiniciarBtn = document.getElementById('reiniciarResultadoBtn');
+    if (reiniciarBtn) {
+        reiniciarBtn.addEventListener('click', () => reiniciarResultado(usuarioId));
     }
 
     try {
@@ -34,8 +41,11 @@ function mostrarResultados(data) {
     document.getElementById('sinEstufaMensaje').style.display = 'none';
     document.getElementById('usoEstufaContent').style.display = 'block';
     document.getElementById('frecuenciaTexto').textContent = capitalizar(data.frecuencia);
-    document.getElementById('porcentajeTexto').textContent = `${data.porcentaje}%`;
     document.getElementById('usoMensualTexto').textContent = `${data.porcentajeUso ?? data.porcentaje}%`;
+    document.getElementById('materialParticuladoTexto').textContent = obtenerContaminantesMensuales(data);
+    const materialParticuladoGramos = obtenerMaterialParticuladoGramos(data);
+    actualizarMaterialParticuladoGrafico(data, materialParticuladoGramos);
+    const materialParticuladoRestante = Math.max(MATERIAL_PARTICULADO_MAXIMO_MENSUAL_GR - materialParticuladoGramos, 0);
 
     const lista = document.getElementById('recomendacionesLista');
     lista.innerHTML = '';
@@ -49,9 +59,9 @@ function mostrarResultados(data) {
     new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Contaminación mensual', 'Sin contaminación estimada'],
+            labels: ['MP2.5 generado al mes', 'Referencia mensual restante'],
             datasets: [{
-                data: [data.porcentaje, 100 - data.porcentaje],
+                data: [materialParticuladoGramos, materialParticuladoRestante],
                 backgroundColor: ['#ff6b6b', '#4ecdc4'],
                 borderWidth: 0
             }]
@@ -85,6 +95,82 @@ function normalizar(str) {
 function capitalizar(str) {
     if (!str) return '-';
     return str.split(' ').map(word => word[0].toUpperCase() + word.slice(1)).join(' ');
+}
+
+function obtenerMaterialParticuladoGramos(data) {
+    const materialParticulado = Number(data.materialParticuladoGramos);
+    if (Number.isFinite(materialParticulado) && materialParticulado >= 0) {
+        return materialParticulado;
+    }
+
+    const porcentaje = Number(data.porcentaje);
+    return Number.isFinite(porcentaje)
+        ? MATERIAL_PARTICULADO_MAXIMO_MENSUAL_GR * (porcentaje / 100)
+        : 0;
+}
+
+function actualizarMaterialParticuladoGrafico(data, materialParticuladoGramos) {
+    const contaminante = data.contaminanteParticulado || 'MP2.5';
+    document.getElementById('materialParticuladoGraficoValor').textContent = `${formatearNumero(materialParticuladoGramos)} g`;
+    document.getElementById('materialParticuladoGraficoUnidad').textContent = `${contaminante}/mes`;
+}
+
+function obtenerContaminantesMensuales(data) {
+    const contaminante = data.contaminanteParticulado || 'MP2.5';
+    const materialParticulado = Number(data.materialParticuladoGramos);
+    const materialParticuladoTexto = data.materialParticuladoTexto
+        || `${formatearNumero(materialParticulado)} g ${contaminante}/mes`;
+    const kgCO2 = Number(data.kgCO2);
+
+    if (!Number.isFinite(kgCO2)) {
+        return materialParticuladoTexto;
+    }
+
+    return `${materialParticuladoTexto} | ${formatearNumero(kgCO2)} kg CO2/mes`;
+}
+
+function formatearNumero(valor) {
+    const numero = Number(valor);
+    return Number.isFinite(numero) ? numero.toLocaleString('es-CL') : '0';
+}
+
+async function reiniciarResultado(usuarioId) {
+    const confirmar = confirm('Esto reiniciara tu resultado personal del a\u00f1o actual. \u00bfQuieres continuar?');
+    if (!confirmar) return;
+
+    const boton = document.getElementById('reiniciarResultadoBtn');
+    boton.disabled = true;
+    boton.textContent = 'Reiniciando...';
+
+    try {
+        const response = await fetch(`/api/resultado/personal/${encodeURIComponent(usuarioId)}`, {
+            method: 'DELETE'
+        });
+        const data = await response.json();
+
+        if (!data.success) {
+            mostrarMensajeReinicio(data.message || 'No se pudo reiniciar el resultado', true);
+            boton.disabled = false;
+            boton.textContent = 'Reiniciar resultado';
+            return;
+        }
+
+        mostrarMensajeReinicio('Resultado reiniciado correctamente. Redirigiendo...');
+        setTimeout(() => {
+            window.location.href = 'registro-datos.html';
+        }, 1200);
+    } catch (error) {
+        mostrarMensajeReinicio('Error al reiniciar resultado. Revisa la conexi\u00f3n con el servidor.', true);
+        boton.disabled = false;
+        boton.textContent = 'Reiniciar resultado';
+    }
+}
+
+function mostrarMensajeReinicio(mensaje, esError = false) {
+    const mensajeDiv = document.getElementById('mensajeReinicio');
+    mensajeDiv.textContent = mensaje;
+    mensajeDiv.className = esError ? 'error-message' : 'success-message';
+    mensajeDiv.style.display = 'block';
 }
 
 function mostrarMensajeSinDatos() {

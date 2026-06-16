@@ -313,6 +313,27 @@ app.get('/api/resultado/personal/:usuarioId', async (req, res) => {
     }
 });
 
+app.delete('/api/resultado/personal/:usuarioId', async (req, res) => {
+    try {
+        const { usuarioId } = req.params;
+        const datosEstufas = await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
+        const anioActual = String(new Date().getFullYear());
+        const datosActualizados = datosEstufas.filter(d => {
+            const anioRegistro = String(d[ESTUFAS_HEADERS[10]] || '');
+            return !(d.usuario_id === usuarioId && anioRegistro === anioActual);
+        });
+
+        if (datosActualizados.length === datosEstufas.length) {
+            return res.json({ success: false, message: 'No hay resultado para reiniciar' });
+        }
+
+        await escribirCSV(ESTUFAS_CSV, datosActualizados, ESTUFAS_HEADERS);
+        res.json({ success: true, message: 'Resultado reiniciado correctamente' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error al reiniciar resultado' });
+    }
+});
+
 function normalizarFrecuencia(frecuencia) {
     return (frecuencia || '')
         .toString()
@@ -320,6 +341,10 @@ function normalizarFrecuencia(frecuencia) {
         .toLowerCase()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '');
+}
+
+function esFrecuenciaAFrio(frecuenciaNormalizada) {
+    return frecuenciaNormalizada === 'solo cuando hace frio' || frecuenciaNormalizada.includes('cuando hace fr');
 }
 
 function obtenerFrecuenciaEfectiva(registro) {
@@ -350,7 +375,7 @@ function normalizarPorcentajeUso(frecuencia, porcentajeUso) {
 function obtenerPorcentajeUso(registro, frecuencia) {
     const frecuenciaNormalizada = normalizarFrecuencia(frecuencia);
 
-    if (frecuenciaNormalizada === 'solo cuando hace frio') {
+    if (esFrecuenciaAFrio(frecuenciaNormalizada)) {
         const porcentaje = Number(registro?.porcentaje_uso);
         return Number.isFinite(porcentaje) && porcentaje >= 1 && porcentaje <= 99 ? Math.round(porcentaje) : 33;
     }
@@ -364,7 +389,7 @@ function obtenerPorcentajeUso(registro, frecuencia) {
 }
 
 function obtenerFrecuenciaVisible(frecuencia) {
-    return normalizarFrecuencia(frecuencia) === 'solo cuando hace frio' ? 'a veces' : frecuencia;
+    return esFrecuenciaAFrio(normalizarFrecuencia(frecuencia)) ? 'a veces' : frecuencia;
 }
 
 function calcularContaminacionPersonal(frecuencia, porcentajeUso) {
@@ -385,6 +410,13 @@ function redondear(valor, decimales = 0) {
     return Math.round(valor * factor) / factor;
 }
 
+function obtenerFechaLocalISO(fecha = new Date()) {
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    return `${anio}-${mes}-${dia}`;
+}
+
 function obtenerRecomendaciones(frecuencia) {
     const recomendacionesMap = {
         "si": ["Reduce el uso a días específicos", "Usa leña seca (menos humo)", "Mantén la estufa bien regulada"],
@@ -400,10 +432,12 @@ app.get('/api/resultado/comunal', async (req, res) => {
     try {
         const datosEstufas = await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
         const calidadAire = await leerCSV(CALIDAD_AIRE_CSV, []);
+        const fechaCalculo = obtenerFechaLocalISO();
         const añoActual = new Date().getFullYear();
         
-        const datosAñoActual = datosEstufas.filter(d => d.año == añoActual);
-        const chimeneasActivas = await calcularChimeneasActivas();
+        const datosAñoActual = datosEstufas.filter(d => obtenerAnioRegistro(d) == añoActual);
+        const totalHogaresRegistrados = datosAñoActual.length;
+        const chimeneasActivas = calcularChimeneasActivas(datosAñoActual);
         
         // Calcular frecuencias
         const frecuencias = {
@@ -424,15 +458,25 @@ app.get('/api/resultado/comunal', async (req, res) => {
             contaminacionTotal += cont.kgCO2;
             materialParticuladoTotal += cont.materialParticuladoGramos;
         }
+
+        const materialParticuladoMaximoComunal = totalHogaresRegistrados * MATERIAL_PARTICULADO_MAXIMO_MENSUAL_GR;
+        const materialParticuladoActualPorcentaje = materialParticuladoMaximoComunal > 0
+            ? redondear((materialParticuladoTotal / materialParticuladoMaximoComunal) * 100, 1)
+            : 0;
         
         res.json({
             success: true,
             data: {
-                total_viviendas: datosAñoActual.length,
+                total_viviendas: totalHogaresRegistrados,
+                total_hogares_registrados: totalHogaresRegistrados,
                 chimeneas_activas_estimadas: chimeneasActivas,
                 frecuencias,
                 contaminacion_total_estimada: contaminacionTotal,
                 material_particulado_total_estimado: redondear(materialParticuladoTotal, 1),
+                material_particulado_actual_porcentaje: materialParticuladoActualPorcentaje,
+                contaminacion_actual_porcentaje: materialParticuladoActualPorcentaje,
+                contaminante_actual: 'MP2.5',
+                fecha_calculo: fechaCalculo,
                 calidad_aire_reciente: calidadAire.slice(-7),
                 año: añoActual
             }
@@ -443,11 +487,11 @@ app.get('/api/resultado/comunal', async (req, res) => {
     }
 });
 
-async function calcularChimeneasActivas() {
-    const datosEstufas = await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
-    const añoActual = new Date().getFullYear();
-    const datosAñoActual = datosEstufas.filter(d => d.año == añoActual);
-    
+function obtenerAnioRegistro(registro) {
+    return registro?.[ESTUFAS_HEADERS[10]] || registro?.año || '';
+}
+
+function calcularChimeneasActivas(datosAñoActual) {
     let totalFactor = 0;
     for (const dato of datosAñoActual) {
         const frecuenciaEfectiva = obtenerFrecuenciaEfectiva(dato);

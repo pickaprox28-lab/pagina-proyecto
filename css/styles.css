@@ -33,7 +33,8 @@ button {
 }
 
 .btn-primary,
-.btn-secondary {
+.btn-secondary,
+.btn-danger {
   min-height: 44px;
   padding: 12px 18px;
   border: 0;
@@ -62,6 +63,16 @@ button {
 
 .btn-secondary:hover {
   background: #e2eee8;
+}
+
+.btn-danger {
+  color: #ffffff;
+  background: var(--danger);
+}
+
+.btn-danger:hover {
+  background: #a93232;
+  transform: translateY(-1px);
 }
 
 .error-message,

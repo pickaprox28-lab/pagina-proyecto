@@ -14,6 +14,7 @@
             <h1>📊 Resultado de contaminación</h1>
             
             <div id="loadingMessage" class="loading">Cargando tus datos...</div>
+            <div id="mensajeReinicio" class="success-message" style="display: none;"></div>
             
             <div id="resultContent" style="display: none;">
                 <div id="sinEstufaMensaje" class="thanks-message" style="display: none;">
@@ -24,10 +25,13 @@
                 <div id="usoEstufaContent">
                     <div class="impact-circle">
                         <canvas id="impactChart" width="200" height="200"></canvas>
-                        <div class="impact-percentage" id="porcentajeTexto">0%</div>
+                        <div class="impact-pollutant" id="materialParticuladoGraficoTexto">
+                            <span id="materialParticuladoGraficoValor">0 g</span>
+                            <span id="materialParticuladoGraficoUnidad">MP2.5/mes</span>
+                        </div>
                     </div>
 
-                    <p class="impact-label">Porcentaje de contaminación al mes</p>
+                    <p class="impact-label">Material particulado contaminante al mes</p>
 
                     <div class="stats-grid">
                         <div class="stat-card">
@@ -39,7 +43,7 @@
                             <p id="usoMensualTexto">0%</p>
                         </div>
                         <div class="stat-card">
-                            <h3>Material particulado mensual</h3>
+                            <h3>Contaminantes al aire por mes</h3>
                             <p id="materialParticuladoTexto">0 g MP2.5/mes</p>
                         </div>
                     </div>
@@ -56,6 +60,9 @@
                     </button>
                     <button class="btn-secondary" onclick="window.location.href='../../dashboard.html'">
                         Volver al Dashboard
+                    </button>
+                    <button id="reiniciarResultadoBtn" class="btn-danger" type="button">
+                        Reiniciar resultado
                     </button>
                 </div>
             </div>
