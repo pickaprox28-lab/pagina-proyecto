@@ -58,20 +58,6 @@ Una vez iniciado el servidor, abre en tu navegador:
 - `data/` contiene los CSV con la información guardada.
 - `servidor/` contiene el backend en Node.js.
 
-## Solución de problemas
-
-- Si aparece `Cannot find module`, ejecuta `npm install` dentro de `servidor`.
-- Si el navegador no carga datos, verifica que el servidor esté corriendo en el puerto `3000`.
-- Si cambiaste archivos CSV manualmente y el dashboard no muestra registros, reinicia el servidor.
-
-## API principal
-
-- `POST /api/login`
-- `POST /api/register`
-- `POST /api/estufa/guardar`
-- `GET /api/resultado/personal/:usuarioId`
-- `GET /api/resultado/comunal`
-
 ## Autores
 
 |     Nombre      |                      Gmail                        |
