@@ -11,15 +11,15 @@
     <div class="result-container">
         <div class="result-card">
             <h1>Resultado Comunal</h1>
-            <p class="subtitle">Resumen de hogares, chimeneas activas y material particulado estimado para la comuna</p>
+            <p class="subtitle">Resumen según los formularios registrados y una referencia comunal de 83.700 viviendas particulares</p>
 
             <div id="loadingMessage" class="loading">Cargando resultado comunal...</div>
 
             <div id="resultContent" style="display: none;">
                 <div class="single-result">
-                    <h2>Contaminación actual estimada</h2>
+                    <h2>Aporte actual estimado</h2>
                     <p id="contaminacionActualPorcentaje" class="result-percentage">0%</p>
-                    <p id="detalleContaminacionActual" class="communal-detail">MP2.5 estimado para hoy</p>
+                    <p id="detalleContaminacionActual" class="communal-detail">MP2.5 estimado para hoy según los registros actuales</p>
                 </div>
 
                 <div class="stats-grid communal-stats">
@@ -28,11 +28,15 @@
                         <p id="totalHogaresRegistrados" class="big-number">0</p>
                     </div>
                     <div class="stat-card">
-                        <h3>Chimeneas encendidas aprox.</h3>
+                        <h3>Viviendas particulares comuna</h3>
+                        <p id="hogaresReferenciaComunal" class="big-number">83.700</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Chimeneas encendidas aprox. registradas</h3>
                         <p id="chimeneasActivasEstimadas" class="big-number">0</p>
                     </div>
                     <div class="stat-card">
-                        <h3>Material particulado estimado</h3>
+                        <h3>Material particulado registrado</h3>
                         <p id="materialParticuladoTotal">0 g MP2.5/mes</p>
                     </div>
                 </div>

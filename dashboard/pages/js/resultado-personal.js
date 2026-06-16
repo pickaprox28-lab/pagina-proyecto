@@ -143,10 +143,7 @@ async function reiniciarResultado(usuarioId) {
     boton.textContent = 'Reiniciando...';
 
     try {
-        const response = await fetch(`/api/resultado/personal/${encodeURIComponent(usuarioId)}`, {
-            method: 'DELETE'
-        });
-        const data = await response.json();
+        const data = await solicitarReinicio(usuarioId);
 
         if (!data.success) {
             mostrarMensajeReinicio(data.message || 'No se pudo reiniciar el resultado', true);
@@ -164,6 +161,23 @@ async function reiniciarResultado(usuarioId) {
         boton.disabled = false;
         boton.textContent = 'Reiniciar resultado';
     }
+}
+
+async function solicitarReinicio(usuarioId) {
+    const usuario = encodeURIComponent(usuarioId);
+    const response = await fetch(`/api/resultado/personal/${usuario}/reiniciar`, {
+        method: 'POST'
+    });
+
+    if (response.ok) {
+        return response.json();
+    }
+
+    const respaldo = await fetch(`/api/resultado/personal/${usuario}`, {
+        method: 'DELETE'
+    });
+
+    return respaldo.json();
 }
 
 function mostrarMensajeReinicio(mensaje, esError = false) {
