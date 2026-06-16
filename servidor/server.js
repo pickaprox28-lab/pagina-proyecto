@@ -8,11 +8,16 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const PASSWORD_SALT_ROUNDS = 10;
 const USUARIOS_HEADERS = ['usuario', 'contraseña', 'email', 'nombre_completo'];
-const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY || '';
+const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY || process.env.RECAPTCHA_SECRET || '';
+const RECAPTCHA_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify';
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..')));
+
+if (!RECAPTCHA_SECRET_KEY) {
+    console.warn('Advertencia: RECAPTCHA_SECRET_KEY no esta configurada; login y registro rechazaran el captcha.');
+}
 
 // Rutas a archivos CSV
 const DATA_DIR = path.join(__dirname, 'data');
@@ -133,8 +138,13 @@ async function validarPassword(usuario, password) {
 }
 
 async function verificarRecaptcha(recaptchaToken) {
+    if (!recaptchaToken || typeof recaptchaToken !== 'string') {
+        console.warn('reCAPTCHA: token no recibido');
+        return false;
+    }
+
     if (!RECAPTCHA_SECRET_KEY) {
-        console.error('Falta configurar RECAPTCHA_SECRET_KEY');
+        console.error('Falta configurar RECAPTCHA_SECRET_KEY en las variables de entorno');
         return false;
     }
 
@@ -143,22 +153,35 @@ async function verificarRecaptcha(recaptchaToken) {
         response: recaptchaToken
     });
 
-    const response = await fetch(
-        'https://www.google.com/recaptcha/api/siteverify',
-        {
+    try {
+        const response = await fetch(RECAPTCHA_VERIFY_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
             body: params
+        });
+
+        if (!response.ok) {
+            console.error(`reCAPTCHA: Google respondio con HTTP ${response.status}`);
+            return false;
         }
-    );
 
-    const data = await response.json();
+        const data = await response.json();
 
-    console.log('Respuesta reCAPTCHA:', data);
+        if (data.success !== true) {
+            console.warn('reCAPTCHA rechazado:', {
+                hostname: data.hostname,
+                errorCodes: data['error-codes']
+            });
+            return false;
+        }
 
-    return data.success === true;
+        return true;
+    } catch (error) {
+        console.error('Error verificando reCAPTCHA:', error);
+        return false;
+    }
 }
 
 // INICIALIZAR ARCHIVOS CSV
