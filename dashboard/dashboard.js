@@ -54,14 +54,14 @@ async function verificarRegistro() {
         const data = await response.json();
 
         if (data.yaRegistro) {
-            estadoP.innerHTML = `Ya has registrado tus datos este ano (${data['a\u00f1o']})<br>
+            estadoP.innerHTML = `Ya has registrado tus datos este año (${data['a\u00f1o']})<br>
                                  Registrado el: ${data.datos?.fecha_registro || 'fecha no disponible'}`;
             actionBtn.textContent = 'Ver mis resultados';
             actionBtn.onclick = () => window.location.href = 'pages/html/resultado-personal.html';
 
             document.getElementById('dashboardLinks').style.display = 'grid';
         } else {
-            estadoP.innerHTML = `Aun no has registrado tus datos para el ano ${data['a\u00f1o']}<br>
+            estadoP.innerHTML = `Aun no has registrado tus datos para el año ${data['a\u00f1o']}<br>
                                  Por favor completa el formulario para contribuir a las estadisticas.`;
             actionBtn.textContent = 'Registrar mis datos';
             actionBtn.onclick = () => window.location.href = 'pages/html/registro-datos.html';
