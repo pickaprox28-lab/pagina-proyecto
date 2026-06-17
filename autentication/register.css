@@ -91,12 +91,6 @@
       opacity: 0.75;
     }
 
-    .g-recaptcha{
-      display: flex;
-      justify-content: center;
-      margin: 15px 0 20px;
-    }
-
     .error-message,
     .success-message{
       margin-bottom: 16px;
@@ -174,8 +168,4 @@
         padding: 28px;
       }
 
-      .g-recaptcha{
-        transform: scale(0.86);
-        transform-origin: center;
-      }
     }

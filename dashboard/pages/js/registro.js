@@ -1,4 +1,4 @@
-// Mapa y lógica de registro (sin captcha)
+// Mapa y lógica de registro
 let mapa;
 let marcador;
 

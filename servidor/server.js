@@ -8,21 +8,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const PASSWORD_SALT_ROUNDS = 10;
 const USUARIOS_HEADERS = ['usuario', 'contraseña', 'email', 'nombre_completo'];
-const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY || process.env.RECAPTCHA_SECRET || '';
-const RECAPTCHA_SITE_KEY = process.env.RECAPTCHA_SITE_KEY || '6Ldxev8sAAAAAKLjNqd3kQQS776nvI_kLnOJAXVZ';
-const RECAPTCHA_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify';
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..')));
-
-if (!RECAPTCHA_SECRET_KEY) {
-    console.warn('Advertencia: RECAPTCHA_SECRET_KEY no esta configurada; login y registro rechazaran el captcha.');
-}
-
-if (!process.env.RECAPTCHA_SITE_KEY) {
-    console.warn('Advertencia: RECAPTCHA_SITE_KEY no esta configurada; si cambiaste la clave secreta, configura tambien la clave publica para evitar invalid-input-response.');
-}
 
 // Rutas a archivos CSV
 const DATA_DIR = path.join(__dirname, 'data');
@@ -142,54 +131,6 @@ async function validarPassword(usuario, password) {
     return passwordGuardada === password;
 }
 
-async function verificarRecaptcha(recaptchaToken) {
-    if (!recaptchaToken || typeof recaptchaToken !== 'string') {
-        console.warn('reCAPTCHA: token no recibido');
-        return false;
-    }
-
-    if (!RECAPTCHA_SECRET_KEY) {
-        console.error('Falta configurar RECAPTCHA_SECRET_KEY en las variables de entorno');
-        return false;
-    }
-
-    const params = new URLSearchParams({
-        secret: RECAPTCHA_SECRET_KEY,
-        response: recaptchaToken
-    });
-
-    try {
-        const response = await fetch(RECAPTCHA_VERIFY_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: params
-        });
-
-        if (!response.ok) {
-            console.error(`reCAPTCHA: Google respondio con HTTP ${response.status}`);
-            return false;
-        }
-
-        const data = await response.json();
-
-        if (data.success !== true) {
-            console.warn('reCAPTCHA rechazado:', {
-                hostname: data.hostname,
-                errorCodes: data['error-codes'],
-                tokenLength: recaptchaToken.length
-            });
-            return false;
-        }
-
-        return true;
-    } catch (error) {
-        console.error('Error verificando reCAPTCHA:', error);
-        return false;
-    }
-}
-
 // INICIALIZAR ARCHIVOS CSV
 
 async function inicializarArchivos() {
@@ -216,20 +157,12 @@ async function inicializarArchivos() {
 
 // LOGIN Y REGISTRO
 
-app.get('/api/recaptcha/site-key', (req, res) => {
-    res.json({ success: true, siteKey: RECAPTCHA_SITE_KEY });
-});
-
 // Login
 app.post('/api/login', async (req, res) => {
     try {
-        const { email, password, recaptchaToken } = req.body;
+        const { email, password } = req.body;
         console.log(`Intento de login: ${email}`);
 
-        if (!(await verificarRecaptcha(recaptchaToken))) {
-            return res.json({ success: false, message: 'Verifica el captcha para continuar' });
-        }
-        
         const usuarios = await leerCSV(USUARIOS_CSV, USUARIOS_HEADERS);
         console.log(`Usuarios cargados: ${usuarios.length}`);
         
@@ -263,13 +196,9 @@ app.post('/api/login', async (req, res) => {
 // Registro
 app.post('/api/register', async (req, res) => {
     try {
-        const { nombre, usuario, email, password, recaptchaToken } = req.body;
+        const { nombre, usuario, email, password } = req.body;
         console.log(`Intento de registro: ${usuario} - ${email}`);
 
-        if (!(await verificarRecaptcha(recaptchaToken))) {
-            return res.json({ success: false, message: 'Verifica el captcha para continuar' });
-        }
-        
         const usuarios = await leerCSV(USUARIOS_CSV, USUARIOS_HEADERS);
 
         // Validar existencia
@@ -395,7 +324,7 @@ app.get('/api/resultado/personal/:usuarioId', async (req, res) => {
         const porcentajeUso = obtenerPorcentajeUso(datosUsuario, frecuenciaEfectiva);
         const contaminacion = calcularContaminacionPersonal(frecuenciaEfectiva, porcentajeUso);
         const frecuenciaVisible = obtenerFrecuenciaVisible(frecuenciaEfectiva);
-        const recomendaciones = obtenerRecomendaciones(frecuenciaVisible);
+        const recomendaciones = obtenerRecomendaciones(frecuenciaVisible, contaminacion.porcentaje);
         const usaEstufa = normalizarFrecuencia(frecuenciaEfectiva) === 'no' ? 'no' : 'si';
         
         res.json({
@@ -579,14 +508,30 @@ function obtenerFechaLocalISO(fecha = new Date()) {
     return `${anio}-${mes}-${dia}`;
 }
 
-function obtenerRecomendaciones(frecuencia) {
-    const recomendacionesMap = {
-        "si": ["Reduce el uso a días específicos", "Usa leña seca (menos humo)", "Mantén la estufa bien regulada"],
-        "todos los dias": ["Reduce el uso a días específicos", "Usa leña seca (menos humo)", "Mantén la estufa bien regulada"],
-        "a veces": ["Buen trabajo reduciendo el uso", "Considera alternativas como estufa a pellet", "Ventila bien los espacios"],
-        "no": ["Excelente! No generas contaminación por estufa", "Eres un ejemplo para la comunidad"]
-    };
-    return recomendacionesMap[normalizarFrecuencia(frecuencia)] || ["Sigue así!"];
+function obtenerRecomendaciones(frecuencia, porcentaje = 0) {
+    if (normalizarFrecuencia(frecuencia) === 'no') {
+        return [
+            'Excelente! No generas contaminaci\u00f3n por estufa a le\u00f1a.',
+            'Mantener alternativas de calefacci\u00f3n limpia ayuda a la comunidad.'
+        ];
+    }
+
+    const impacto = Number(porcentaje);
+    const recomendaciones = [];
+
+    if (Number.isFinite(impacto) && impacto >= 75) {
+        recomendaciones.push('Limpiar los ca\u00f1ones de tu estufa si la contaminaci\u00f3n es muy alta, para evitar riesgos de incendios y contaminar dentro de tu hogar.');
+    }
+
+    recomendaciones.push(
+        'Cambiar a estufa a pellet, que contamina menos.',
+        'Usar estufa el\u00e9ctrica, que contamina mucho menos.',
+        'Usar aire acondicionado el\u00e9ctrico, que contamina mucho menos.',
+        'Mejorar el aislamiento t\u00e9rmico de tu hogar.',
+        'Abrigarse para reducir la necesidad de calefacci\u00f3n.'
+    );
+
+    return recomendaciones;
 }
 
 // 4. Obtener resultado comunal
@@ -711,18 +656,6 @@ app.get('/api/reinicio/verificar/:usuarioId', async (req, res) => {
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error al verificar' });
     }
-});
-
-// 7. Obtener captcha simple
-app.get('/api/captcha/obtener', (req, res) => {
-    const num1 = Math.floor(Math.random() * 10) + 1;
-    const num2 = Math.floor(Math.random() * 10) + 1;
-    const resultado = num1 + num2;
-    
-    res.json({
-        pregunta: `${num1} + ${num2} = ?`,
-        resultadoEsperado: resultado,
-    });
 });
 
 // INICIAR SERVIDOR 

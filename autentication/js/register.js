@@ -27,8 +27,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('confirmPassword').value;
-        const recaptchaToken = obtenerRecaptchaToken();
-
         mensajeExito.style.display = 'none';
         mensajeError.style.display = 'none';
 
@@ -47,11 +45,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (!recaptchaToken) {
-            mostrarError('Completa el captcha antes de registrarte.');
-            return;
-        }
-
         submitBtn.disabled = true;
         submitBtn.textContent = 'Registrando...';
 
@@ -61,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ nombre, usuario, email, password, recaptchaToken })
+                body: JSON.stringify({ nombre, usuario, email, password })
             });
 
             const data = await response.json();
@@ -80,27 +73,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    function obtenerRecaptchaToken() {
-        if (window.recaptchaHelper) return window.recaptchaHelper.getToken();
-        if (typeof grecaptcha === 'undefined') return '';
-        return grecaptcha.getResponse();
-    }
-
-    function reiniciarRecaptcha() {
-        if (window.recaptchaHelper) {
-            window.recaptchaHelper.reset();
-            return;
-        }
-
-        if (typeof grecaptcha !== 'undefined') {
-            grecaptcha.reset();
-        }
-    }
-
     function mostrarError(mensaje) {
         mensajeError.textContent = mensaje;
         mensajeError.style.display = 'block';
-        reiniciarRecaptcha();
 
         setTimeout(() => {
             mensajeError.style.display = 'none';

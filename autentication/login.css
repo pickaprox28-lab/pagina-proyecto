@@ -161,21 +161,10 @@ input:focus{
   color: rgb(255, 255, 255);
 }
 
-.g-recaptcha{
-  display: flex;
-  justify-content: center;
-  margin: 15px 0;
-}
-
 @media (max-width: 430px){
   .container{
     width: 100%;
     padding: 28px;
-  }
-
-  .g-recaptcha{
-    transform: scale(0.86);
-    transform-origin: center;
   }
 }
 

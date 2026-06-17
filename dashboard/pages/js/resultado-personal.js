@@ -1,5 +1,3 @@
-const MATERIAL_PARTICULADO_MAXIMO_MENSUAL_GR = 1200;
-
 document.addEventListener('DOMContentLoaded', async function() {
     const usuarioId = localStorage.getItem('usuarioActual');
 
@@ -40,40 +38,15 @@ function mostrarResultados(data) {
 
     document.getElementById('sinEstufaMensaje').style.display = 'none';
     document.getElementById('usoEstufaContent').style.display = 'block';
-    document.getElementById('frecuenciaTexto').textContent = capitalizar(data.frecuencia);
     document.getElementById('usoMensualTexto').textContent = `${data.porcentajeUso ?? data.porcentaje}%`;
     document.getElementById('materialParticuladoTexto').textContent = obtenerContaminantesMensuales(data);
-    const materialParticuladoGramos = obtenerMaterialParticuladoGramos(data);
-    actualizarMaterialParticuladoGrafico(data, materialParticuladoGramos);
-    const materialParticuladoRestante = Math.max(MATERIAL_PARTICULADO_MAXIMO_MENSUAL_GR - materialParticuladoGramos, 0);
 
     const lista = document.getElementById('recomendacionesLista');
     lista.innerHTML = '';
-    data.recomendaciones.forEach(rec => {
+    (data.recomendaciones || []).forEach(rec => {
         const li = document.createElement('li');
         li.textContent = rec;
         lista.appendChild(li);
-    });
-
-    const ctx = document.getElementById('impactChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['MP2.5 generado al mes', 'Referencia mensual restante'],
-            datasets: [{
-                data: [materialParticuladoGramos, materialParticuladoRestante],
-                backgroundColor: ['#ff6b6b', '#4ecdc4'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            cutout: '70%',
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: { position: 'bottom' }
-            }
-        }
     });
 }
 
@@ -90,29 +63,6 @@ function normalizar(str) {
         .toLowerCase()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '');
-}
-
-function capitalizar(str) {
-    if (!str) return '-';
-    return str.split(' ').map(word => word[0].toUpperCase() + word.slice(1)).join(' ');
-}
-
-function obtenerMaterialParticuladoGramos(data) {
-    const materialParticulado = Number(data.materialParticuladoGramos);
-    if (Number.isFinite(materialParticulado) && materialParticulado >= 0) {
-        return materialParticulado;
-    }
-
-    const porcentaje = Number(data.porcentaje);
-    return Number.isFinite(porcentaje)
-        ? MATERIAL_PARTICULADO_MAXIMO_MENSUAL_GR * (porcentaje / 100)
-        : 0;
-}
-
-function actualizarMaterialParticuladoGrafico(data, materialParticuladoGramos) {
-    const contaminante = data.contaminanteParticulado || 'MP2.5';
-    document.getElementById('materialParticuladoGraficoValor').textContent = `${formatearNumero(materialParticuladoGramos)} g`;
-    document.getElementById('materialParticuladoGraficoUnidad').textContent = `${contaminante}/mes`;
 }
 
 function obtenerContaminantesMensuales(data) {
