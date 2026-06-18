@@ -131,7 +131,7 @@ async function enviarRegistro(event) {
         return;
     }
     
-    // Si usa estufa, validar que seleccionó frecuencia
+    // Si usa estufa, validar que selecciono la frecuencia
     if (usa_estufa === 'si' && !frecuenciaRadio) {
         mostrarError('Por favor selecciona la frecuencia de uso');
         return;
