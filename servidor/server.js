@@ -671,8 +671,7 @@ app.get('/api/debug/estufas', async (req, res) => {
 
 inicializarArchivos().then(() => {
     app.listen(PORT, () => {
-        console.log(`Servidor corriendo en http://localhost:${PORT}`);
-        console.log(`Accede a: http://localhost:${PORT}/Dashboard/dashboard.html`);
+        console.log(`Servidor local corriendo en http://localhost:${PORT}`);
         console.log(`Datos de los usuarios en: ${DATA_DIR}`);
         console.log(`\nCredenciales de prueba:`);
         console.log(`   admin@ejemplo.com / 1234`);
