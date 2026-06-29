@@ -2,54 +2,6 @@
 
 Proyecto web con autenticación, dashboard y un backend en Node.js que guarda datos en archivos CSV.
 
-## Instalar Node.js
-
-1. Ve a [https://nodejs.org/](https://nodejs.org/)
-2. Descarga la versión LTS.
-3. Instálala con las opciones por defecto.
-4. Verifica la instalación en el terminal:
-
-```bash
-node -v
-npm -v
-```
-
-Si ambos comandos muestran una versión, Node.js quedó instalado correctamente.
-
-## Instalar dependencias
-
-Las dependencias están en la carpeta `servidor`.
-
-```bash
-cd servidor
-npm install
-```
-
-## Levantar el servidor
-
-Desde la carpeta del proyecto abrir una termial:
-
-```bash
-cd servidor
-node server.js
-```
-
-Si todo está bien, verás un mensaje similar a este:
-
-```text
-Servidor corriendo en http://localhost:3000
-Accede a: http://localhost:3000/dashboard/dashboard.html
-```
-
-## Abrir la aplicación
-
-Una vez iniciado el servidor, abre en tu navegador:
-
-- `http://localhost:3000/`
-- `http://localhost:3000/autentication/login.html`
-- `http://localhost:3000/autentication/register.html`
-- `http://localhost:3000/dashboard/dashboard.html`
-
 ## Estructura del proyecto
 
 - `autentication/` contiene login y registro de usuarios.
@@ -63,6 +15,5 @@ Una vez iniciado el servidor, abre en tu navegador:
 |     Nombre      |                      Gmail                        |
 |-----------------|---------------------------------------------------|
 | Ivan Ruiz       | ivanalejandro.ruiz@alumnos.ulagos.cl              |
-| Daniel Mansilla | danielhumbertoarmando.mansilla@alumnosulagos.cl   |
-| Deyanira Ojeda  | deyanirascarleth.ojeda@alumnos.ulagos.cl          |
 | Jeremias Tapia  | jeremiasariel.tapia@alumnos.ulagos.cl             |
+| Deyanira Ojeda  | deyanirascarleth.ojeda@alumnos.ulagos.cl          |
