@@ -38,7 +38,7 @@ function mostrarResultados(data) {
 
     document.getElementById('sinEstufaMensaje').style.display = 'none';
     document.getElementById('usoEstufaContent').style.display = 'block';
-    document.getElementById('usoMensualTexto').textContent = `${data.porcentajeUso ?? data.porcentaje}%`;
+    document.getElementById('materialParticuladoDiarioTexto').textContent = obtenerContaminanteDiario(data);
     document.getElementById('materialParticuladoTexto').textContent = obtenerContaminantesMensuales(data);
 
     const lista = document.getElementById('recomendacionesLista');
@@ -79,9 +79,22 @@ function obtenerContaminantesMensuales(data) {
     return `${materialParticuladoTexto} | ${formatearNumero(kgCO2)} kg CO2/mes`;
 }
 
-function formatearNumero(valor) {
+function obtenerContaminanteDiario(data) {
+    const contaminante = data.contaminanteParticulado || 'MP2.5';
+    const materialParticulado = Number(data.materialParticuladoGramos);
+    const materialParticuladoDiario = Number.isFinite(materialParticulado) ? materialParticulado / 30 : 0;
+
+    return `${formatearNumero(materialParticuladoDiario, 1)} g ${contaminante}/día`;
+}
+
+function formatearNumero(valor, decimales = 1) {
     const numero = Number(valor);
-    return Number.isFinite(numero) ? numero.toLocaleString('es-CL') : '0';
+    if (!Number.isFinite(numero)) return '0';
+
+    return numero.toLocaleString('es-CL', {
+        minimumFractionDigits: decimales > 0 && !Number.isInteger(numero) ? 1 : 0,
+        maximumFractionDigits: decimales
+    });
 }
 
 async function reiniciarResultado(usuarioId) {

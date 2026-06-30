@@ -10,44 +10,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
     inicializarMapa();
     
-    // Mostrar/ocultar sección de frecuencia
+    // Mostrar/ocultar detalle del equipo
     const radiosEstufa = document.querySelectorAll('input[name="usa_estufa"]');
-    const radiosFrecuencia = document.querySelectorAll('input[name="frecuencia"]');
-    const porcentajeUsoSection = document.getElementById('porcentajeUsoSection');
-    const porcentajeUsoInput = document.getElementById('porcentajeUso');
+    const radiosTipoChimenea = document.querySelectorAll('input[name="tipo_chimenea"]');
+    const radiosTipoUso = document.querySelectorAll('input[name="tipo_uso"]');
+    const radiosTipoLena = document.querySelectorAll('input[name="tipo_lena"]');
+    const detalleEstufaSection = document.getElementById('detalleEstufaSection');
+    const tipoLenaSection = document.getElementById('tipoLenaSection');
 
     radiosEstufa.forEach(radio => {
         radio.addEventListener('change', function() {
-            const frecuenciaSection = document.getElementById('frecuenciaSection');
             if (this.value === 'si') {
-                frecuenciaSection.style.display = 'block';
-                radiosFrecuencia.forEach(r => r.required = true);
+                detalleEstufaSection.style.display = 'block';
+                radiosTipoChimenea.forEach(r => r.required = true);
+                radiosTipoUso.forEach(r => r.required = true);
+                actualizarPreguntaLena();
             } else {
-                frecuenciaSection.style.display = 'none';
-                radiosFrecuencia.forEach(r => {
-                    r.required = false;
-                    r.checked = false;
-                });
-                ocultarPorcentajeUso();
+                detalleEstufaSection.style.display = 'none';
+                limpiarRadios(radiosTipoChimenea);
+                limpiarRadios(radiosTipoUso);
+                limpiarRadios(radiosTipoLena);
+                tipoLenaSection.style.display = 'none';
             }
         });
     });
 
-    radiosFrecuencia.forEach(radio => {
-        radio.addEventListener('change', function() {
-            if (this.value === 'a veces') {
-                porcentajeUsoSection.style.display = 'block';
-                porcentajeUsoInput.required = true;
-            } else {
-                ocultarPorcentajeUso();
-            }
-        });
+    radiosTipoChimenea.forEach(radio => {
+        radio.addEventListener('change', actualizarPreguntaLena);
     });
 
-    function ocultarPorcentajeUso() {
-        porcentajeUsoSection.style.display = 'none';
-        porcentajeUsoInput.required = false;
-        porcentajeUsoInput.value = '';
+    function actualizarPreguntaLena() {
+        const tipoChimenea = obtenerValorRadio('tipo_chimenea');
+        const requiereLena = Boolean(tipoChimenea) && !esEquipoPellet(tipoChimenea);
+
+        tipoLenaSection.style.display = requiereLena ? 'block' : 'none';
+        radiosTipoLena.forEach(radio => {
+            radio.required = requiereLena;
+            if (!requiereLena) radio.checked = false;
+        });
     }
     
     // Submit del formulario
@@ -97,11 +97,11 @@ async function enviarRegistro(event) {
     const usaEstufaRadio = document.querySelector('input[name="usa_estufa"]:checked');
     const usa_estufa = usaEstufaRadio ? usaEstufaRadio.value : null;
     
-    // Obtener el valor de frecuencia
-    const frecuenciaRadio = document.querySelector('input[name="frecuencia"]:checked');
-    const frecuencia = frecuenciaRadio ? frecuenciaRadio.value : 'no';
-    const porcentajeUsoInput = document.getElementById('porcentajeUso');
-    const porcentaje_uso = frecuencia === 'a veces' ? porcentajeUsoInput.value : '';
+    const tipo_chimenea = obtenerValorRadio('tipo_chimenea');
+    const tipo_uso = obtenerValorRadio('tipo_uso');
+    const tipo_lena = obtenerValorRadio('tipo_lena');
+    const frecuencia = usa_estufa === 'si' ? obtenerFrecuenciaDesdeTipoUso(tipo_uso) : 'no';
+    const porcentaje_uso = usa_estufa === 'si' ? obtenerPorcentajeDesdeTipoUso(tipo_uso) : 0;
     
     const comentario = document.getElementById('comentario').value;
     const direccion = document.getElementById('direccion').value;
@@ -116,12 +116,15 @@ async function enviarRegistro(event) {
         usa_estufa,
         frecuencia,
         porcentaje_uso,
+        tipo_chimenea,
+        tipo_uso,
+        tipo_lena,
         comentario
     });
     
     // Validar que se seleccionó respuesta
     if (!usa_estufa) {
-        mostrarError('Por favor selecciona si tienes o no estufa a leña');
+        mostrarError('Por favor selecciona si utilizas estufa, chimenea o estufa a pallet');
         return;
     }
     
@@ -131,18 +134,19 @@ async function enviarRegistro(event) {
         return;
     }
     
-    // Si usa estufa, validar que selecciono la frecuencia
-    if (usa_estufa === 'si' && !frecuenciaRadio) {
-        mostrarError('Por favor selecciona la frecuencia de uso');
+    if (usa_estufa === 'si' && !tipo_chimenea) {
+        mostrarError('Por favor selecciona qué tipo de chimenea utilizas');
         return;
     }
 
-    if (usa_estufa === 'si' && frecuencia === 'a veces') {
-        const porcentajeUso = Number(porcentaje_uso);
-        if (!Number.isFinite(porcentajeUso) || porcentajeUso < 1 || porcentajeUso > 99) {
-            mostrarError('Ingresa un porcentaje de uso mensual entre 1 y 99');
-            return;
-        }
+    if (usa_estufa === 'si' && !tipo_uso) {
+        mostrarError('Por favor selecciona el tipo de uso');
+        return;
+    }
+
+    if (usa_estufa === 'si' && !esEquipoPellet(tipo_chimenea) && !tipo_lena) {
+        mostrarError('Por favor selecciona qué leña utilizas');
+        return;
     }
     
     try {
@@ -157,6 +161,9 @@ async function enviarRegistro(event) {
                 usa_estufa: usa_estufa,
                 frecuencia: frecuencia,
                 porcentaje_uso: porcentaje_uso,
+                tipo_chimenea: tipo_chimenea,
+                tipo_uso: tipo_uso,
+                tipo_lena: tipo_lena,
                 comentario: comentario || ''
             })
         });
@@ -191,4 +198,34 @@ function mostrarExito(mensaje) {
     const exitoDiv = document.getElementById('mensajeExito');
     exitoDiv.textContent = mensaje;
     exitoDiv.style.display = 'block';
+}
+
+function limpiarRadios(radios) {
+    radios.forEach(radio => {
+        radio.required = false;
+        radio.checked = false;
+    });
+}
+
+function obtenerValorRadio(nombre) {
+    const radio = document.querySelector(`input[name="${nombre}"]:checked`);
+    return radio ? radio.value : '';
+}
+
+function esEquipoPellet(tipoChimenea) {
+    return tipoChimenea === 'estufa_a_pellet' || tipoChimenea === 'caldera_a_pellet';
+}
+
+function obtenerFrecuenciaDesdeTipoUso(tipoUso) {
+    if (tipoUso === 'todos_los_dias') return 'todos los dias';
+    if (tipoUso === 'calefaccionar') return 'calefaccionar';
+    if (tipoUso === 'solo_cocinar') return 'solo cocinar';
+    return 'no';
+}
+
+function obtenerPorcentajeDesdeTipoUso(tipoUso) {
+    if (tipoUso === 'todos_los_dias') return 100;
+    if (tipoUso === 'calefaccionar') return 50;
+    if (tipoUso === 'solo_cocinar') return 25;
+    return 0;
 }

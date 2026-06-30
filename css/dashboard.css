@@ -175,6 +175,11 @@
   gap: 12px;
 }
 
+.radio-group.vertical {
+  align-items: stretch;
+  flex-direction: column;
+}
+
 .radio-group label {
   display: inline-flex;
   align-items: center;

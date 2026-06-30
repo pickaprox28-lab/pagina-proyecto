@@ -20,9 +20,36 @@ const ESTUFAS_CSV = path.join(DATA_DIR, 'datos_estufas.csv');
 const DIRECCIONES_CSV = path.join(DATA_DIR, 'direcciones.csv');
 const REPORTES_CSV = path.join(DATA_DIR, 'reportes.csv');
 const CALIDAD_AIRE_CSV = path.join(DATA_DIR, 'calidad_aire_mock.csv');
-const ESTUFAS_HEADERS = ['id', 'usuario_id', 'direccion', 'latitud', 'longitud', 'usa_estufa', 'frecuencia', 'porcentaje_uso', 'comentario', 'fecha_registro', 'año'];
+const ESTUFAS_HEADERS = ['id', 'usuario_id', 'direccion', 'latitud', 'longitud', 'usa_estufa', 'frecuencia', 'porcentaje_uso', 'comentario', 'fecha_registro', 'año', 'tipo_chimenea', 'tipo_uso', 'tipo_lena'];
 const MATERIAL_PARTICULADO_MAXIMO_MENSUAL_GR = 1200;
 const HOGARES_PARTICULARES_PUERTO_MONTT = 83700;
+const DIAS_CALCULO_MENSUAL = 30;
+const HORAS_USO_DIARIO_BASE = 8;
+
+const TIPOS_CHIMENEA = {
+    'cocina a lena': { etiqueta: 'COCINA A LEÑA', consumoMinKgHora: 1, consumoMaxKgHora: 4, combustible: 'lena' },
+    'salamandra': { etiqueta: 'SALAMANDRA', consumoMinKgHora: 0.6, consumoMaxKgHora: 4, combustible: 'lena' },
+    'estufa simple': { etiqueta: 'ESTUFA SIMPLE', consumoMinKgHora: 0.6, consumoMaxKgHora: 4, combustible: 'lena' },
+    'estufa doble camara': { etiqueta: 'ESTUFA DOBLE CÁMARA', consumoMinKgHora: 0.6, consumoMaxKgHora: 3.5, combustible: 'lena' },
+    'chimenea abierta': { etiqueta: 'CHIMENEA ABIERTA', consumoMinKgHora: 1, consumoMaxKgHora: 6, combustible: 'lena' },
+    'chimenea cerrada': { etiqueta: 'CHIMENEA CERRADA', consumoMinKgHora: 1, consumoMaxKgHora: 5, combustible: 'lena' },
+    'estufa hechiza': { etiqueta: 'ESTUFA HECHIZA', consumoMinKgHora: 1, consumoMaxKgHora: 6, combustible: 'lena' },
+    'estufa a pellet': { etiqueta: 'ESTUFA A PELLET', consumoMinKgHora: 0.6, consumoMaxKgHora: 1.6, combustible: 'pellet' },
+    'caldera a pellet': { etiqueta: 'CALDERA A PELLET', consumoMinKgHora: 0.9, consumoMaxKgHora: 4.9, combustible: 'pellet' }
+};
+
+const TIPOS_USO = {
+    'todos los dias': { etiqueta: 'Utilizo la estufa todos los días', frecuencia: 'todos los dias', porcentaje: 100, horasDiarias: HORAS_USO_DIARIO_BASE },
+    'calefaccionar': { etiqueta: 'Utilizo para calefaccionar', frecuencia: 'calefaccionar', porcentaje: 50, horasDiarias: HORAS_USO_DIARIO_BASE * 0.5 },
+    'solo cocinar': { etiqueta: 'Utilizo la estufa solo para cocinar', frecuencia: 'solo cocinar', porcentaje: 25, horasDiarias: 2 }
+};
+
+const TIPOS_LENA = {
+    'lena seca': { etiqueta: 'Leña seca', factorEmisionGrKg: 11 },
+    'lena humeda': { etiqueta: 'Leña húmeda', factorEmisionGrKg: 30 }
+};
+
+const PELLET_COMERCIAL = { etiqueta: 'Pellet comercial', factorEmisionGrKg: 2.84 };
 
 // FUNCIONES
 
@@ -232,17 +259,73 @@ app.post('/api/register', async (req, res) => {
 // 1. Guardar datos de estufa
 app.post('/api/estufa/guardar', async (req, res) => {
     try {
-        const { usuario_id, direccion, latitud, longitud, usa_estufa, frecuencia, porcentaje_uso, comentario } = req.body;
+        const {
+            usuario_id,
+            direccion,
+            latitud,
+            longitud,
+            usa_estufa,
+            frecuencia,
+            porcentaje_uso,
+            tipo_chimenea,
+            tipo_uso,
+            tipo_lena,
+            comentario
+        } = req.body;
         const datosEstufas = await leerCSV(ESTUFAS_CSV, ESTUFAS_HEADERS);
         
         const nuevoId = datosEstufas.length + 1;
         const fecha = obtenerFechaLocalISO();
         const año = new Date().getFullYear();
-        const frecuenciaGuardada = esFrecuenciaAFrio(normalizarFrecuencia(frecuencia)) ? 'a veces' : frecuencia;
-        const porcentajeUso = normalizarPorcentajeUso(frecuenciaGuardada, porcentaje_uso);
+        const usaEstufaNormalizada = normalizarFrecuencia(usa_estufa);
+        let frecuenciaGuardada = 'no';
+        let porcentajeUso = 0;
+        let tipoChimeneaGuardada = '';
+        let tipoUsoGuardado = '';
+        let tipoLenaGuardada = '';
 
-        if (normalizarFrecuencia(usa_estufa) === 'si' && normalizarFrecuencia(frecuenciaGuardada) === 'a veces' && porcentajeUso === null) {
-            return res.status(400).json({ success: false, message: 'Ingresa un porcentaje de uso mensual válido' });
+        if (!['si', 'no'].includes(usaEstufaNormalizada)) {
+            return res.status(400).json({ success: false, message: 'Selecciona si utilizas estufa, chimenea o estufa a pallet' });
+        }
+
+        if (usaEstufaNormalizada === 'si') {
+            const usaFormularioNuevo = Boolean(tipo_chimenea || tipo_uso || tipo_lena);
+
+            if (usaFormularioNuevo) {
+                const tipoChimeneaConfig = obtenerTipoChimenea(tipo_chimenea);
+                const tipoUsoConfig = obtenerTipoUso(tipo_uso);
+
+                if (!tipoChimeneaConfig) {
+                    return res.status(400).json({ success: false, message: 'Selecciona un tipo de chimenea válido' });
+                }
+
+                if (!tipoUsoConfig) {
+                    return res.status(400).json({ success: false, message: 'Selecciona un tipo de uso válido' });
+                }
+
+                let tipoLenaConfig = null;
+                if (tipoChimeneaConfig.combustible === 'lena') {
+                    tipoLenaConfig = obtenerTipoLena(tipo_lena);
+                    if (!tipoLenaConfig) {
+                        return res.status(400).json({ success: false, message: 'Selecciona si utilizas leña seca o leña húmeda' });
+                    }
+                }
+
+                frecuenciaGuardada = tipoUsoConfig.frecuencia;
+                porcentajeUso = tipoUsoConfig.porcentaje;
+                tipoChimeneaGuardada = tipoChimeneaConfig.etiqueta;
+                tipoUsoGuardado = tipoUsoConfig.etiqueta;
+                tipoLenaGuardada = tipoChimeneaConfig.combustible === 'pellet'
+                    ? PELLET_COMERCIAL.etiqueta
+                    : tipoLenaConfig.etiqueta;
+            } else {
+                frecuenciaGuardada = esFrecuenciaAFrio(normalizarFrecuencia(frecuencia)) ? 'a veces' : frecuencia;
+                porcentajeUso = normalizarPorcentajeUso(frecuenciaGuardada, porcentaje_uso);
+
+                if (normalizarFrecuencia(frecuenciaGuardada) === 'a veces' && porcentajeUso === null) {
+                    return res.status(400).json({ success: false, message: 'Ingresa un porcentaje de uso mensual válido' });
+                }
+            }
         }
         
         const nuevoRegistro = {
@@ -251,12 +334,15 @@ app.post('/api/estufa/guardar', async (req, res) => {
             direccion,
             latitud,
             longitud,
-            usa_estufa,
-            frecuencia: normalizarFrecuencia(usa_estufa) === 'no' ? 'no' : frecuenciaGuardada,
+            usa_estufa: usaEstufaNormalizada,
+            frecuencia: usaEstufaNormalizada === 'no' ? 'no' : frecuenciaGuardada,
             porcentaje_uso: porcentajeUso ?? '',
             comentario: comentario || '',
             fecha_registro: fecha,
-            año
+            año,
+            tipo_chimenea: tipoChimeneaGuardada,
+            tipo_uso: tipoUsoGuardado,
+            tipo_lena: tipoLenaGuardada
         };
         
         datosEstufas.push(nuevoRegistro);
@@ -321,10 +407,9 @@ app.get('/api/resultado/personal/:usuarioId', async (req, res) => {
         }
         
         const frecuenciaEfectiva = obtenerFrecuenciaEfectiva(datosUsuario);
-        const porcentajeUso = obtenerPorcentajeUso(datosUsuario, frecuenciaEfectiva);
-        const contaminacion = calcularContaminacionPersonal(frecuenciaEfectiva, porcentajeUso);
+        const contaminacion = calcularContaminacionPersonal(datosUsuario);
         const frecuenciaVisible = obtenerFrecuenciaVisible(frecuenciaEfectiva);
-        const recomendaciones = obtenerRecomendaciones(frecuenciaVisible, contaminacion.porcentaje);
+        const recomendaciones = obtenerRecomendaciones(datosUsuario, contaminacion.porcentaje);
         const usaEstufa = normalizarFrecuencia(frecuenciaEfectiva) === 'no' ? 'no' : 'si';
         
         res.json({
@@ -332,9 +417,12 @@ app.get('/api/resultado/personal/:usuarioId', async (req, res) => {
             data: {
                 usa_estufa: usaEstufa,
                 frecuencia: frecuenciaVisible,
+                tipo_chimenea: datosUsuario.tipo_chimenea || '',
+                tipo_uso: datosUsuario.tipo_uso || '',
+                tipo_lena: datosUsuario.tipo_lena || '',
                 kgCO2: contaminacion.kgCO2,
                 porcentaje: contaminacion.porcentaje,
-                porcentajeUso: porcentajeUso,
+                porcentajeUso: contaminacion.porcentaje,
                 contaminanteParticulado: contaminacion.contaminanteParticulado,
                 materialParticuladoGramos: contaminacion.materialParticuladoGramos,
                 materialParticuladoTexto: contaminacion.materialParticuladoTexto,
@@ -434,8 +522,34 @@ function normalizarFrecuencia(frecuencia) {
         .replace(/[\u0300-\u036f]/g, '');
 }
 
+function normalizarClave(valor) {
+    return normalizarFrecuencia(valor)
+        .replace(/[_-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 function esFrecuenciaAFrio(frecuenciaNormalizada) {
     return frecuenciaNormalizada === 'solo cuando hace frio' || frecuenciaNormalizada.includes('cuando hace fr');
+}
+
+function obtenerTipoChimenea(tipoChimenea) {
+    return TIPOS_CHIMENEA[normalizarClave(tipoChimenea)] || null;
+}
+
+function obtenerTipoUso(tipoUso) {
+    const clave = normalizarClave(tipoUso);
+
+    if (TIPOS_USO[clave]) return TIPOS_USO[clave];
+    if (clave.includes('todos los dias')) return TIPOS_USO['todos los dias'];
+    if (clave.includes('calefaccion')) return TIPOS_USO.calefaccionar;
+    if (clave.includes('solo cocinar')) return TIPOS_USO['solo cocinar'];
+
+    return null;
+}
+
+function obtenerTipoLena(tipoLena) {
+    return TIPOS_LENA[normalizarClave(tipoLena)] || null;
 }
 
 function obtenerFrecuenciaEfectiva(registro) {
@@ -445,11 +559,19 @@ function obtenerFrecuenciaEfectiva(registro) {
         return 'no';
     }
 
+    const tipoUso = obtenerTipoUso(registro?.tipo_uso);
+    if (tipoUso) {
+        return tipoUso.frecuencia;
+    }
+
     return registro?.frecuencia || (usaEstufa === 'si' ? 'si' : 'no');
 }
 
 function normalizarPorcentajeUso(frecuencia, porcentajeUso) {
     const frecuenciaNormalizada = normalizarFrecuencia(frecuencia);
+    const tipoUso = obtenerTipoUso(frecuencia);
+
+    if (tipoUso) return tipoUso.porcentaje;
 
     if (frecuenciaNormalizada === 'no') return 0;
     if (frecuenciaNormalizada === 'si' || frecuenciaNormalizada === 'todos los dias') return 100;
@@ -465,6 +587,9 @@ function normalizarPorcentajeUso(frecuencia, porcentajeUso) {
 
 function obtenerPorcentajeUso(registro, frecuencia) {
     const frecuenciaNormalizada = normalizarFrecuencia(frecuencia);
+    const tipoUso = obtenerTipoUso(registro?.tipo_uso) || obtenerTipoUso(frecuencia);
+
+    if (tipoUso) return tipoUso.porcentaje;
 
     if (esFrecuenciaAFrio(frecuenciaNormalizada)) {
         const porcentaje = Number(registro?.porcentaje_uso);
@@ -483,12 +608,83 @@ function obtenerFrecuenciaVisible(frecuencia) {
     return esFrecuenciaAFrio(normalizarFrecuencia(frecuencia)) ? 'a veces' : frecuencia;
 }
 
-function calcularContaminacionPersonal(frecuencia, porcentajeUso) {
+function obtenerTipoUsoDesdeFrecuencia(registro, frecuencia) {
+    const tipoUso = obtenerTipoUso(frecuencia);
+    if (tipoUso) return tipoUso;
+
+    const porcentaje = obtenerPorcentajeUso(registro, frecuencia);
+    if (porcentaje <= 0) return null;
+
+    return {
+        etiqueta: obtenerFrecuenciaVisible(frecuencia),
+        frecuencia,
+        porcentaje,
+        horasDiarias: HORAS_USO_DIARIO_BASE * (porcentaje / 100)
+    };
+}
+
+function calcularContaminacionPersonal(registroOFrecuencia, porcentajeUso) {
+    if (registroOFrecuencia && typeof registroOFrecuencia === 'object') {
+        const registro = registroOFrecuencia;
+        const frecuencia = obtenerFrecuenciaEfectiva(registro);
+
+        if (normalizarFrecuencia(frecuencia) === 'no') {
+            return crearResultadoContaminacion(0, 0);
+        }
+
+        const tipoChimenea = obtenerTipoChimenea(registro?.tipo_chimenea);
+        const tipoUso = obtenerTipoUso(registro?.tipo_uso) || obtenerTipoUsoDesdeFrecuencia(registro, frecuencia);
+
+        if (tipoChimenea && tipoUso) {
+            const combustible = tipoChimenea.combustible === 'pellet'
+                ? PELLET_COMERCIAL
+                : obtenerTipoLena(registro?.tipo_lena);
+
+            if (combustible) {
+                return calcularContaminacionPorConsumo(tipoChimenea, tipoUso, combustible);
+            }
+        }
+
+        return calcularContaminacionAntigua(frecuencia, obtenerPorcentajeUso(registro, frecuencia));
+    }
+
+    return calcularContaminacionAntigua(registroOFrecuencia, porcentajeUso);
+}
+
+function calcularContaminacionPorConsumo(tipoChimenea, tipoUso, combustible) {
+    const consumoKgHoraPromedio = (tipoChimenea.consumoMinKgHora + tipoChimenea.consumoMaxKgHora) / 2;
+    const horasMensuales = tipoUso.horasDiarias * DIAS_CALCULO_MENSUAL;
+    const kgCombustibleMes = consumoKgHoraPromedio * horasMensuales;
+    const materialParticuladoGramos = redondear(kgCombustibleMes * combustible.factorEmisionGrKg, 1);
+
+    return {
+        porcentaje: tipoUso.porcentaje,
+        contaminanteParticulado: 'MP2.5',
+        materialParticuladoGramos,
+        materialParticuladoTexto: `${materialParticuladoGramos} g MP2.5/mes`,
+        consumoKgHoraPromedio: redondear(consumoKgHoraPromedio, 2),
+        horasMensuales: redondear(horasMensuales, 1),
+        kgCombustibleMes: redondear(kgCombustibleMes, 1),
+        factorEmisionGrKg: combustible.factorEmisionGrKg
+    };
+}
+
+function calcularContaminacionAntigua(frecuencia, porcentajeUso) {
     const porcentaje = obtenerPorcentajeUso({ porcentaje_uso: porcentajeUso }, frecuencia);
     const materialParticuladoGramos = redondear(MATERIAL_PARTICULADO_MAXIMO_MENSUAL_GR * (porcentaje / 100), 1);
 
     return {
         kgCO2: redondear(120 * (porcentaje / 100), 1),
+        porcentaje,
+        contaminanteParticulado: 'MP2.5',
+        materialParticuladoGramos,
+        materialParticuladoTexto: `${materialParticuladoGramos} g MP2.5/mes`
+    };
+}
+
+function crearResultadoContaminacion(materialParticuladoGramos, porcentaje) {
+    return {
+        kgCO2: 0,
         porcentaje,
         contaminanteParticulado: 'MP2.5',
         materialParticuladoGramos,
@@ -508,7 +704,10 @@ function obtenerFechaLocalISO(fecha = new Date()) {
     return `${anio}-${mes}-${dia}`;
 }
 
-function obtenerRecomendaciones(frecuencia, porcentaje = 0) {
+function obtenerRecomendaciones(registroOFrecuencia, porcentaje = 0) {
+    const esRegistro = registroOFrecuencia && typeof registroOFrecuencia === 'object';
+    const frecuencia = esRegistro ? obtenerFrecuenciaEfectiva(registroOFrecuencia) : registroOFrecuencia;
+
     if (normalizarFrecuencia(frecuencia) === 'no') {
         return [
             'Excelente! No generas contaminaci\u00f3n por estufa a le\u00f1a.',
@@ -518,13 +717,20 @@ function obtenerRecomendaciones(frecuencia, porcentaje = 0) {
 
     const impacto = Number(porcentaje);
     const recomendaciones = [];
+    const tipoChimenea = esRegistro ? obtenerTipoChimenea(registroOFrecuencia?.tipo_chimenea) : null;
+    const usaPellet = tipoChimenea?.combustible === 'pellet';
 
     if (Number.isFinite(impacto) && impacto >= 75) {
         recomendaciones.push('Limpiar los ca\u00f1ones de tu estufa si la contaminaci\u00f3n es muy alta, para evitar riesgos de incendios y contaminar dentro de tu hogar.');
     }
 
+    if (!usaPellet) {
+        recomendaciones.push('Cambiar a estufa a pellet, que contamina menos.');
+    } else {
+        recomendaciones.push('Mantener la estufa o caldera a pellet limpia y con mantenciones al d\u00eda.');
+    }
+
     recomendaciones.push(
-        'Cambiar a estufa a pellet, que contamina menos.',
         'Usar estufa el\u00e9ctrica, que contamina mucho menos.',
         'Usar aire acondicionado el\u00e9ctrico, que contamina mucho menos.',
         'Mejorar el aislamiento t\u00e9rmico de tu hogar.',
@@ -560,9 +766,9 @@ app.get('/api/resultado/comunal', async (req, res) => {
         let contaminacionTotal = 0;
         let materialParticuladoTotal = 0;
         for (const dato of datosAñoActual) {
-            const frecuenciaEfectiva = obtenerFrecuenciaEfectiva(dato);
-            const cont = calcularContaminacionPersonal(frecuenciaEfectiva, obtenerPorcentajeUso(dato, frecuenciaEfectiva));
-            contaminacionTotal += cont.kgCO2;
+            const cont = calcularContaminacionPersonal(dato);
+            const kgCO2 = Number(cont.kgCO2);
+            if (Number.isFinite(kgCO2)) contaminacionTotal += kgCO2;
             materialParticuladoTotal += cont.materialParticuladoGramos;
         }
 

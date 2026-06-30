@@ -32,27 +32,46 @@
                 
                 <!-- Sección de la Estufa -->
                 <div class="form-section">
-                    <h3>Uso de estufa a leña</h3>
+                    <h3>Uso de calefactor o chimenea</h3>
                     <div class="question">
-                        <label>¿Tienes estufa a leña?</label>
+                        <label>¿Utilizas estufa, chimenea o estufa a pallet?</label>
                         <div class="radio-group">
                             <label><input type="radio" name="usa_estufa" value="si" required> Sí</label>
                             <label><input type="radio" name="usa_estufa" value="no"> No</label>
                         </div>
                     </div>
                     
-                    <div id="frecuenciaSection" style="display: none;">
+                    <div id="detalleEstufaSection" style="display: none;">
                         <div class="question">
-                            <label>Frecuencia de uso:</label>
-                            <div class="radio-group">
-                                <label><input type="radio" name="frecuencia" value="todos los dias"> Todos los días</label>
-                                <label><input type="radio" name="frecuencia" value="a veces"> A veces</label>
+                            <label>¿Qué tipo de chimenea utilizas?</label>
+                            <div class="radio-group vertical">
+                                <label><input type="radio" name="tipo_chimenea" value="cocina_a_lena"> Cocina a leña</label>
+                                <label><input type="radio" name="tipo_chimenea" value="salamandra"> Salamandra</label>
+                                <label><input type="radio" name="tipo_chimenea" value="estufa_simple"> Estufa simple</label>
+                                <label><input type="radio" name="tipo_chimenea" value="estufa_doble_camara"> Estufa doble cámara</label>
+                                <label><input type="radio" name="tipo_chimenea" value="chimenea_abierta"> Chimenea abierta</label>
+                                <label><input type="radio" name="tipo_chimenea" value="chimenea_cerrada"> Chimenea cerrada</label>
+                                <label><input type="radio" name="tipo_chimenea" value="estufa_hechiza"> Estufa hechiza</label>
+                                <label><input type="radio" name="tipo_chimenea" value="estufa_a_pellet"> Estufa a pellet</label>
+                                <label><input type="radio" name="tipo_chimenea" value="caldera_a_pellet"> Caldera a pellet</label>
                             </div>
                         </div>
 
-                        <div id="porcentajeUsoSection" class="input-group" style="display: none;">
-                            <label for="porcentajeUso">Porcentaje de uso mensual:</label>
-                            <input type="number" id="porcentajeUso" min="1" max="99" step="1" placeholder="Ej: 30">
+                        <div class="question">
+                            <label>Tipo de uso</label>
+                            <div class="radio-group vertical">
+                                <label><input type="radio" name="tipo_uso" value="todos_los_dias"> Utilizo la estufa todos los días</label>
+                                <label><input type="radio" name="tipo_uso" value="calefaccionar"> Utilizo para calefaccionar</label>
+                                <label><input type="radio" name="tipo_uso" value="solo_cocinar"> Utilizo la estufa solo para cocinar</label>
+                            </div>
+                        </div>
+
+                        <div id="tipoLenaSection" class="question">
+                            <label>¿Qué leña utilizas?</label>
+                            <div class="radio-group vertical">
+                                <label><input type="radio" name="tipo_lena" value="lena_seca"> Leña seca</label>
+                                <label><input type="radio" name="tipo_lena" value="lena_humeda"> Leña húmeda</label>
+                            </div>
                         </div>
                         
                         <div class="question">
